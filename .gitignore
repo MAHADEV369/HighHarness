@@ -1,0 +1,21 @@
+# Rust build artifacts
+/target
+*.rs.bk
+
+# Harness bootstrap artifacts (created by `HighHarness bootstrap init`)
+/.harness
+
+# Editors
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+
+# Temp / logs
+*.tmp
+*.log

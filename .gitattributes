@@ -1,0 +1,10 @@
+# Enforce LF line endings for consistency across platforms
+* text=auto eol=lf
+
+# Diff drivers for common file types
+*.md diff=markdown
+*.rs diff=rust
+*.toml diff=toml
+
+# Binary artifacts (no diff, no line-ending normalization)
+*.json -diff

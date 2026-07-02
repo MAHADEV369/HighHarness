@@ -1,0 +1,47 @@
+[package]
+name        = "highharness"
+version     = "0.1.0"
+edition     = "2021"
+rust-version = "1.78"
+description = "Runtime-neutral agent harness: hash-chained audit trails, permission gates, episode traces, and verification gates for AI coding agents."
+license     = "MIT"
+repository  = "https://github.com/trident/HighHarness"
+homepage    = "https://github.com/trident/HighHarness"
+keywords    = ["agent", "harness", "audit", "verification", "ai"]
+categories  = ["command-line-utilities", "development-tools"]
+
+[[bin]]
+name = "HighHarness"
+path = "src/main.rs"
+
+[lib]
+name = "highharness"
+path = "src/lib.rs"
+
+[dependencies]
+serde      = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml       = "0.8"
+clap       = { version = "4", features = ["derive", "string"] }
+sha2       = "0.10"
+anyhow     = "1"
+thiserror  = "1"
+rand       = "0.8"
+regex      = "1"
+tokio      = { version = "1", features = ["rt-multi-thread", "macros", "io-util", "process", "fs", "sync", "time"] }
+chrono     = { version = "0.4", features = ["serde"] }
+libc       = "0.2"
+glob       = "0.3"
+reqwest    = { version = "0.12", features = ["json", "stream"], default-features = false }
+futures-util = "0.3"
+
+[dev-dependencies]
+tempfile     = "3"
+assert_cmd   = "2"
+predicates   = "3"
+tokio-test   = "0.4"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "symbols"
