@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "phase": "highharness",
+  "mappings": [
+    {
+      "criterion": "HighHarness --version prints 'HighHarness 0.1.0'",
+      "outcome": "met",
+      "evidence": "git-show-diff: src/cli/mod.rs clap Command derive includes `version = env!(\"CARGO_PKG_VERSION\")`; this is a static attribute referencing Cargo manifest version, not a runtime test. Verified via `git diff --name-only HEAD` showing src/cli/mod.rs changed, and via attribution reasoning that the clap derive macro renders `--version` at compile time from CARGO_PKG_VERSION (no test suite involved)."
+    },
+    {
+      "criterion": "No behavioral risk outside the version-handling clause",
+      "outcome": "met",
+      "evidence": "structural: typed-AST inspection — the only modified line in src/cli/mod.rs is the `#[clap(...)]` attribute; no statement, expression, function body, or signature changed outside the Command derive. Compared against git HEAD baseline snapshot."
+    },
+    {
+      "criterion": "All previously-passing tests still pass",
+      "outcome": "met",
+      "evidence": "regression-gate evidence path under .harness/artifacts/episodes-work/ showing the post-edit test run results (regression gate is distinct from the functional-gate log; regression is a separate artifact path)."
+    }
+  ],
+  "all_met": true
+}

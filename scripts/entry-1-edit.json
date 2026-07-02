@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "ok": true,
+  "content": {
+    "kind": "text",
+    "value": "wrote 4728 bytes to src/cli/mod.rs"
+  },
+  "meta": {
+    "duration_ms": 4,
+    "bytes": 4728,
+    "exit_code": null
+  },
+  "redactions": [],
+  "approval_id": null,
+  "tool_call_id": "tc_20260629T095108Z-add-version-flag-agent-pin0_1"
+}

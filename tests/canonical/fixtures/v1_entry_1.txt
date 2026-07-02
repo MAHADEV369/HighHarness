@@ -1,0 +1,16 @@
+## ENTRY 1 — 2026-06-29T10:14Z
+- agent:        opencode-go/glm-5.2
+- run_id:       2026-06-29T1014Z-fix-auth-leak-3f9a-a1b2
+- tier:         safety-critical
+- files:        src/auth/session.js, tests/auth.spec.js, CHANGELOG.agent.md, logs/episodes/2026-06-29T1014Z-fix-auth-leak-3f9a-a1b2.md
+- intent:       Patch session token leak where refresh tokens were logged on error and add a regression test.
+- diff_summary: Replaced console.error(err.refreshToken) at src/auth/session.js:82 with
+                console.error('auth_error_id=' + err.id); added redaction assertion at
+                tests/auth.spec.js:31; appended this changelog entry and the run's episode file.
+- evidence:     npm test → 141/141 passing; npm run lint → 0 errors; gate logs attached;
+                snapshot.diff +1 test 0 regressions, types/lint hashes unchanged.
+- attribution:  env
+- verification: full
+- status:       modified
+- prev_hash:    0000000000000000000000000000000000000000000000000000000000000000
+- this_hash:    

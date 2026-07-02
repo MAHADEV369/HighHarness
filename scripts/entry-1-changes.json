@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "run_id": "__RUN_ID__",
+  "files": ["src/cli/mod.rs", "tests/cli_version.rs", "CHANGELOG.agent.md", "logs/episodes/__RUN_ID__.md"],
+  "diff_stat": "M src/cli/mod.rs\nA tests/cli_version.rs\nM CHANGELOG.agent.md\nA logs/episodes/__RUN_ID__.md"
+}

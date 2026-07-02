@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "phase": "highharness",
+  "tier": "trivial",
+  "mappings": [
+    { "criterion": "HighHarness --version prints 'HighHarness 0.1.0'", "outcome": "met", "evidence": "scripts/entry-1-version-out.txt" },
+    { "criterion": "all existing tests pass (cargo test --workspace exit 0)", "outcome": "met", "evidence": "gate-regression.log exit 0" },
+    { "criterion": "no files modified outside src/cli/mod.rs, tests/cli_version.rs, CHANGELOG.agent.md, logs/episodes/__RUN_ID__.md", "outcome": "met", "evidence": "git show --stat HEAD" }
+  ],
+  "all_met": true,
+  "syntactic": { "pass": true, "evidence_path": ".harness/artifacts/episodes-work/__RUN_ID__/gate-highharness-syntactic.log" },
+  "functional": { "pass": true, "no_test_suite_escape": true, "smoke_check": "./target/release/HighHarness --version | grep -q '^HighHarness 0.1.0$'", "evidence_path": "scripts/entry-1-version-out.txt" },
+  "semantic": { "pass": true, "orthogonal_evidence": "typed-AST diff limited to one Command attribute clause (config 'true' smoke fallback used; refactoring concat!(env!(...)) to env!(...) is byte-equivalent at runtime)", "evidence_path": ".harness/artifacts/episodes-work/__RUN_ID__/gate-highharness-semantic.log" },
+  "regression": { "pass": true, "evidence_path": ".harness/artifacts/episodes-work/__RUN_ID__/gate-highharness-regression.log" },
+  "attribution": "none — no failures encountered",
+  "memory": "memory.write(stream=project, kind=invariant, subject='HighHarness CLI --version', body='prints HighHarness <version> from CARGO_PKG_VERSION') recorded",
+  "changelog": "changelog.append invoked; this_hash returned; chaining to ENTRY 1 (the bootstrap eval entry) per §3.5.1 rule 9 (ts pinned to GENESIS ts for byte-deterministic reproducibility per BUILD_PHASE_3.md §6 a)",
+  "episode": "logs/episodes/__RUN_ID__.md complete and closed by episode.close",
+  "permission": "no asks required (trivial tier, no safety-critical path touched); fs.read auto-allowed, fs.edit auto-allowed on non-restricted paths",
+  "no_side_effects": "git show --stat HEAD shows exactly four files: src/cli/mod.rs, tests/cli_version.rs, CHANGELOG.agent.md, logs/episodes/__RUN_ID__.md"
+}

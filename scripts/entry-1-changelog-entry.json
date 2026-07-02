@@ -1,0 +1,16 @@
+{
+  "n": 2,
+  "ts": "2026-06-29T09:51:08Z",
+  "agent": "trident_phase3_demo",
+  "run_id": "__RUN_ID__",
+  "tier": "trivial",
+  "files": ["src/cli/mod.rs", "tests/cli_version.rs", "CHANGELOG.agent.md", "logs/episodes/__RUN_ID__.md"],
+  "intent": "Add a --version flag to the HighHarness CLI that prints \"HighHarness 0.1.0\".",
+  "diff_summary": "Refined src/cli/mod.rs clap Command derive to use version = env!(\"CARGO_PKG_VERSION\") (Phase 2 had concat!(env!(\"...\")) which is equivalent; the demo normalizes the form); added tests/cli_version.rs asserting the --version output; appended this changelog entry and the run's episode file.",
+  "evidence": "gate-syntactic.log = cargo check --all-targets exit 0; gate-functional.log = cargo test --workspace --no-run exit 0; gate-semantic.log = typed-AST diff limited to one Command attribute clause (smoke fallback used per config); gate-regression.log = cargo test --workspace exit 0 with new tests/cli_version.rs::version_prints_highharness_0_1_0 passing; ./target/release/HighHarness --version prints 'HighHarness 0.1.0'.",
+  "attribution": "none",
+  "verification": "full",
+  "status": "modified",
+  "prev_hash": "",
+  "this_hash": ""
+}

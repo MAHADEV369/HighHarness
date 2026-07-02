@@ -1,0 +1,8 @@
+{
+  "run_1": { "this_hash": "91e7eb5c56a1becc076cc20ead893d674439513fe78e9d004d11e49f6be1db45", "episode_hash": "59bc02a346fad4a6c8ae93befb706449c7090384648869a34e4e7760dd68a034", "run_id": "20260629T095108Z-add-version-flag-agent-pin0", "commit": "64fc8b97ea6482f260ea5ceef27fee5e80c4ba80" },
+  "run_2": { "this_hash": "91e7eb5c56a1becc076cc20ead893d674439513fe78e9d004d11e49f6be1db45", "episode_hash": "59bc02a346fad4a6c8ae93befb706449c7090384648869a34e4e7760dd68a034", "run_id": "20260629T095108Z-add-version-flag-agent-pin0", "commit": "64fc8b97ea6482f260ea5ceef27fee5e80c4ba80" },
+  "this_hash_match": true,
+  "episode_hash_match": true,
+  "commit_match": true,
+  "reproducibility": "byte-level (this_hash and episode_hash match across runs from the same commit, using --pin)"
+}
