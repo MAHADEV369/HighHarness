@@ -4,63 +4,63 @@ use crate::error::HxResult;
 use clap::{Parser, Subcommand};
 use std::path::Path;
 
-/// struct `Cmd` — Implements HARNESS_SECURITY.md §9 (incident subcommand).
+/// CLI arguments for the incident subcommand.
 #[derive(Parser, Debug)]
 pub struct Cmd {
     #[clap(subcommand)]
-    /// item `?` — Implements HARNESS_SECURITY.md / HARNESS_ENGINEERING.md.
+    /// The incident action to perform.
     pub cmd: IncidentCmd,
 }
 
-/// enum `IncidentCmd` — Implements HARNESS_SECURITY.md §9.
+/// Available incident actions.
 #[derive(Subcommand, Debug)]
 pub enum IncidentCmd {
-    /// Variant `Declare` — Implements HARNESS_SECURITY.md / HARNESS_ENGINEERING.md.
+    /// Declare a new incident.
     Declare {
+        /// Run identifier associated with the incident.
         #[clap(long)]
-        /// item `?` — Implements HARNESS_SECURITY.md / HARNESS_ENGINEERING.md.
         run_id: String,
+        /// Detection rule that triggered the incident.
         #[clap(long)]
-        /// item `?` — Implements HARNESS_SECURITY.md / HARNESS_ENGINEERING.md.
         detection_rule: String,
+        /// Attack or failure vector.
         #[clap(long)]
-        /// item `?` — Implements HARNESS_SECURITY.md / HARNESS_ENGINEERING.md.
         vector: String,
+        /// Severity level.
         #[clap(long)]
-        /// item `?` — Implements HARNESS_SECURITY.md / HARNESS_ENGINEERING.md.
         severity: String,
+        /// Whether the incident had impact.
         #[clap(long)]
-        /// item `?` — Implements HARNESS_SECURITY.md / HARNESS_ENGINEERING.md.
         had_impact: bool,
+        /// Evidence paths or URLs.
         #[clap(long)]
-        /// item `?` — Implements HARNESS_SECURITY.md / HARNESS_ENGINEERING.md.
         evidence: Vec<String>,
     },
-    /// Variant `List` — Implements HARNESS_SECURITY.md / HARNESS_ENGINEERING.md.
+    /// List incidents (optionally only open ones).
     List {
+        /// Only list incidents that are not yet closed.
         #[clap(long)]
-        /// item `?` — Implements HARNESS_SECURITY.md / HARNESS_ENGINEERING.md.
         open_only: bool,
     },
-    /// Variant `Ack` — Implements HARNESS_SECURITY.md / HARNESS_ENGINEERING.md.
+    /// Acknowledge an incident.
     Ack {
-        /// item `?` — Implements HARNESS_SECURITY.md / HARNESS_ENGINEERING.md.
+        /// Incident identifier.
         id: String,
+        /// Person or agent acknowledging the incident.
         #[clap(long)]
-        /// item `?` — Implements HARNESS_SECURITY.md / HARNESS_ENGINEERING.md.
         by: String,
     },
-    /// Variant `Close` — Implements HARNESS_SECURITY.md / HARNESS_ENGINEERING.md.
+    /// Close an incident with an optional postmortem.
     Close {
-        /// item `?` — Implements HARNESS_SECURITY.md / HARNESS_ENGINEERING.md.
+        /// Incident identifier.
         id: String,
+        /// Optional postmortem document path.
         #[clap(long)]
-        /// item `?` — Implements HARNESS_SECURITY.md / HARNESS_ENGINEERING.md.
         postmortem: Option<String>,
     },
 }
 
-/// fn `run` — Implements HARNESS_SECURITY.md / HARNESS_ENGINEERING.md.
+/// Execute the incident subcommand.
 pub fn run(cmd: Cmd, root: &Path) -> HxResult<i32> {
     match cmd.cmd {
         IncidentCmd::Declare {

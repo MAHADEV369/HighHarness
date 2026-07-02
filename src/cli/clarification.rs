@@ -6,42 +6,40 @@ use clap::{Parser, Subcommand};
 
 use crate::error::HxResult;
 
+/// CLI arguments for the clarification subcommand.
 #[derive(Parser, Debug)]
-/// struct `Cmd` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct Cmd {
     #[clap(subcommand)]
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// The clarification action to perform.
     pub cmd: ClarificationCmd,
 }
 
+/// Available clarification actions.
 #[derive(Subcommand, Debug)]
-/// enum `ClarificationCmd` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub enum ClarificationCmd {
-    /// Variant `List` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// List all open clarification requests.
     List,
-    /// Variant `Resolve` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Resolve a clarification request with an answer.
     Resolve {
+        /// ID of the clarification request.
         #[clap(long)]
-        /// Field `id` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         id: String,
 
+        /// The answer to the clarification request.
         #[clap(long)]
-        /// Field `answer` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         answer: String,
     },
 }
 
-/// fn `run` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
-pub fn run(cmd: Cmd, root: &Path) -> HxResult<i32> {
+/// Execute the clarification subcommand.
+pub fn run(cmd: Cmd, _root: &Path) -> HxResult<i32> {
     match cmd.cmd {
         ClarificationCmd::List => {
             println!("[]");
-            /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             Ok(0)
         }
         ClarificationCmd::Resolve { id, answer } => {
             println!("{} {}", id, answer);
-            /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             Ok(0)
         }
     }

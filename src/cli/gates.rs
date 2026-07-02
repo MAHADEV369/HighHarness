@@ -10,43 +10,41 @@ use clap::{Parser, Subcommand};
 
 use crate::error::{HxError, HxResult};
 
+/// CLI arguments for the gates subcommand.
 #[derive(Parser, Debug)]
-/// struct `Cmd` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct Cmd {
     #[clap(subcommand)]
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// The gate action to perform.
     pub cmd: GatesCmd,
 }
 
+/// Available gate actions.
 #[derive(Subcommand, Debug)]
-/// enum `GatesCmd` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub enum GatesCmd {
     /// Run a single gate; exit 0 on pass, non-zero on fail/blocked.
     Run {
+        /// Build phase identifier.
         #[clap(long)]
-        /// Field `phase` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         phase: String,
 
+        /// Gate name to evaluate.
         #[clap(long)]
-        /// Field `gate` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         gate: String,
 
+        /// Run identifier for the gate check.
         #[clap(long)]
-        /// Field `run_id` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         run_id: String,
         /// Inline JSON or path to a JSON file describing changes.
         #[clap(long)]
-        /// Field `changes` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         changes: String,
         /// Inline JSON or path to a JSON file with the §7.3 verification
         /// mapping. Required iff `--gate semantic`.
         #[clap(long)]
-        /// Field `verification` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         verification: Option<std::path::PathBuf>,
     },
 }
 
-/// fn `run` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Execute the gates subcommand.
 pub fn run(cmd: Cmd, root: &Path) -> HxResult<i32> {
     match cmd.cmd {
         GatesCmd::Run {
@@ -71,12 +69,10 @@ pub fn run(cmd: Cmd, root: &Path) -> HxResult<i32> {
                 let ver_value: serde_json::Value = serde_json::from_str(&ver_raw)?;
                 let r = crate::gates::run_semantic(&phase, &run_id, ver_value, root)?;
                 println!("{}", serde_json::to_string_pretty(&r)?);
-                /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
                 Ok(if r.status == "pass" { 0 } else { 1 })
             } else {
                 let r = crate::gates::run(&phase, &gate, &run_id, changes_value, root)?;
                 println!("{}", serde_json::to_string_pretty(&r)?);
-                /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
                 Ok(if r.status == "pass" { 0 } else { 1 })
             }
         }

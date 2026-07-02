@@ -48,7 +48,6 @@ pub fn take(root: &Path, run_id: &str, label: &str) -> HxResult<String> {
     };
     let s = serde_json::to_string_pretty(&snap)?;
     fs::write(&path, s)?;
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(snap_id)
 }
 
@@ -57,7 +56,6 @@ fn read_git_state(root: &Path) -> SnapshotGit {
     let status = run_capture(root, &["status", "--porcelain=v2", "-b"]).unwrap_or_default();
     let dirty = !status.is_empty();
     let diff_stat = run_capture(root, &["diff", "--stat"]).unwrap_or_default();
-    /// Variant `SnapshotGit` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     SnapshotGit {
         commit,
         dirty,
@@ -75,7 +73,6 @@ fn run_capture(root: &Path, args: &[&str]) -> Option<String> {
     if !out.status.success() {
         return None;
     }
-    /// Variant `Some` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Some(String::from_utf8_lossy(&out.stdout).trim().to_string())
 }
 
@@ -129,7 +126,6 @@ pub fn get(root: &Path, snapshot_id: &str) -> HxResult<Snapshot> {
 /// Diff two snapshots (by run_id+label).
 pub fn diff(root: &Path, before: &str, after: &str) -> HxResult<Value> {
     let _ = root;
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(json!({ "before": before, "after": after, "diff": "n/a in v1" }))
 }
 
@@ -142,7 +138,6 @@ pub fn revert(root: &Path, snapshot_id: &str) -> HxResult<()> {
     if root.join(".harness").exists() {
         // Allowed — but we check the snapshot descriptor before touching anything.
     }
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(())
 }
 

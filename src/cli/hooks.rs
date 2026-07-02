@@ -7,32 +7,32 @@ use serde_json::Value;
 
 use crate::error::HxResult;
 
+/// CLI arguments for the hooks subcommand.
 #[derive(Parser, Debug)]
-/// struct `Cmd` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct Cmd {
     #[clap(subcommand)]
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// The hook action to perform.
     pub cmd: HookCmd,
 }
 
+/// Available hook actions.
 #[derive(Subcommand, Debug)]
-/// enum `HookCmd` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub enum HookCmd {
-    /// Variant `PreTool` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Run the pre-tool hook (permission check).
     PreTool {
         /// Path to the JSON payload (or stdin if absent).
         json: Option<std::path::PathBuf>,
     },
-    /// Variant `PostTool` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Run the post-tool hook (log the tool call).
     PostTool {
         /// Path to the JSON payload (or stdin if absent).
         json: Option<std::path::PathBuf>,
     },
-    /// Variant `SessionStart` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Run the session-start hook (bootstrap and chain verification).
     SessionStart,
 }
 
-/// fn `run` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Execute the hooks subcommand.
 pub fn run(cmd: Cmd, root: &Path) -> HxResult<i32> {
     match cmd.cmd {
         HookCmd::PreTool { json } => pre_tool(root, json.as_deref()),
@@ -44,13 +44,11 @@ pub fn run(cmd: Cmd, root: &Path) -> HxResult<i32> {
 fn read_payload(p: Option<&Path>) -> HxResult<Value> {
     if let Some(path) = p {
         let raw = std::fs::read_to_string(path)?;
-        /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         Ok(serde_json::from_str(&raw).unwrap_or(Value::Null))
     } else {
         let mut s = String::new();
         use std::io::Read;
         std::io::stdin().read_to_string(&mut s)?;
-        /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         Ok(serde_json::from_str(&s).unwrap_or(Value::Null))
     }
 }
@@ -77,7 +75,6 @@ fn pre_tool(root: &Path, json: Option<&Path>) -> HxResult<i32> {
         .unwrap_or(Value::Object(Default::default()));
     let reg = crate::tools::registry::Registry::load(root)?;
     let desc = match reg.get(&tool) {
-        /// Variant `Some` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         Some(d) => d.clone(),
         None => {
             eprintln!("hook pre-tool: unknown tool {}", tool);
@@ -96,7 +93,6 @@ fn pre_tool(root: &Path, json: Option<&Path>) -> HxResult<i32> {
     let _ = crate::telemetry::integrity::append(
         root,
         "hook.pre-tool",
-        /// Field `serde_json` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         serde_json::json!({"tool": tool, "decision": decision.decision, "run_id": run_id}),
     );
     match decision.decision.as_str() {
@@ -127,10 +123,8 @@ fn post_tool(root: &Path, json: Option<&Path>) -> HxResult<i32> {
     let _ = crate::telemetry::integrity::append(
         root,
         "hook.post-tool",
-        /// Field `serde_json` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         serde_json::json!({"tool": payload.get("tool"), "run_id": payload.get("run_id")}),
     );
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(0)
 }
 
@@ -152,7 +146,6 @@ fn session_start(root: &Path) -> HxResult<i32> {
     // ok
     let bs = crate::bootstrap::verify(root)?;
     println!("ok {}", bs.genesis_hash);
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(0)
 }
 

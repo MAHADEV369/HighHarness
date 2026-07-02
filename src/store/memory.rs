@@ -9,33 +9,33 @@ use serde::{Deserialize, Serialize};
 use crate::error::HxResult;
 use crate::store::{locks_dir, memory_dir};
 
+/// A single memory entry in the project memory store.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-/// struct `MemoryEntry` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct MemoryEntry {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Schema version for this entry.
     pub schema_version: u32,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Unique entry identifier.
     pub id: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Memory stream this entry belongs to.
     pub stream: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Type of memory entry (e.g., "fact", "decision").
     pub kind: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Subject or topic of the memory.
     pub subject: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Body text of the memory entry.
     pub body: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Run ID that produced this entry.
     pub evidence_run_id: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Whether this entry is pinned and should not be pruned.
     pub pinned: bool,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Tags for filtering and categorization.
     pub tags: Vec<String>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// ISO-8601 creation timestamp.
     pub created_at: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Optional time-to-live in days before expiry.
     pub ttl_days: Option<u32>,
+    /// Whether this entry has been tombstoned (soft-deleted).
     #[serde(default)]
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     pub tombstone: bool,
 }
 
@@ -58,7 +58,6 @@ pub fn write(root: &Path, stream: &str, entry: MemoryEntry) -> HxResult<String> 
     let line = serde_json::to_string(&entry)?;
     writeln!(f, "{}", line)?;
     f.sync_data()?;
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(entry.id)
 }
 
@@ -97,14 +96,12 @@ pub fn query(
         }
         out.push(v);
     }
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(out)
 }
 
 /// Pin or unpin an entry.
 pub fn pin(root: &Path, id: &str, pinned: bool) -> HxResult<()> {
     let _ = (root, id, pinned);
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(())
 }
 
@@ -116,7 +113,6 @@ pub fn forget(root: &Path, id: &str) -> HxResult<()> {
         id: format!("tomb_{}", id),
 
         stream: String::new(),
-        /// Field `kind` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         kind: "tombstone".to_string(),
 
         subject: String::new(),
@@ -138,7 +134,6 @@ pub fn forget(root: &Path, id: &str) -> HxResult<()> {
     let lock_path = locks_dir(root).join("memory.lock");
     let _lock = crate::store::locks::FileLock::acquire(&lock_path, 5000)?;
     let _ = tomb; // suppress unused
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(())
 }
 
@@ -152,7 +147,7 @@ pub fn forget_subject(root: &Path, stream: &str, subject: &str) -> HxResult<()> 
         if line.trim().is_empty() {
             continue;
         }
-        let mut v: serde_json::Value = serde_json::from_str(line)?;
+        let v: serde_json::Value = serde_json::from_str(line)?;
         if v.get("subject").and_then(|x| x.as_str()) == Some(subject) {
             let id = v.get("id").and_then(|x| x.as_str()).unwrap_or("x");
             let tomb = serde_json::json!({
@@ -179,31 +174,24 @@ pub fn forget_subject(root: &Path, stream: &str, subject: &str) -> HxResult<()> 
         out.push('\n');
     }
     fs::write(&path, out)?;
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serde_json::json;
     use tempfile::TempDir;
 
     fn mk_entry(id: &str, subject: &str) -> MemoryEntry {
-        /// Variant `MemoryEntry` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         MemoryEntry {
             schema_version: 1,
 
             id: id.to_string(),
-            /// Field `stream` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             stream: "project".to_string(),
-            /// Field `kind` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             kind: "fact".to_string(),
 
             subject: subject.to_string(),
-            /// Field `body` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             body: "body".to_string(),
-            /// Field `evidence_run_id` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             evidence_run_id: "r".to_string(),
 
             pinned: false,

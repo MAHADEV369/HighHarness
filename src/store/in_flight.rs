@@ -23,7 +23,6 @@ pub fn open(root: &Path, line: InFlight) -> HxResult<()> {
     use std::io::Write;
     writeln!(f, "{}", serde_json::to_string(&line)?)?;
     f.sync_data()?;
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(())
 }
 
@@ -52,7 +51,6 @@ pub fn close(root: &Path, run_id: &str) -> HxResult<()> {
         s.push('\n');
     }
     fs::write(&path, s)?;
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(())
 }
 
@@ -87,7 +85,6 @@ pub fn reap_stale(root: &Path) -> HxResult<()> {
         s.push('\n');
     }
     fs::write(&path, s)?;
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(())
 }
 
@@ -98,18 +95,14 @@ mod tests {
     use tempfile::TempDir;
 
     fn mk_line(run_id: &str, state: &str) -> InFlight {
-        /// Variant `InFlight` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         InFlight {
             schema_version: 1,
 
             run_id: run_id.to_string(),
-            /// Field `agent_id` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             agent_id: "a".to_string(),
 
             opened_at: crate::id::now_iso(),
-            /// Field `phase` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             phase: "highharness".to_string(),
-            /// Field `tier` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             tier: "trivial".to_string(),
 
             state: state.to_string(),

@@ -1,28 +1,43 @@
 use assert_cmd::Command;
+use tempfile::TempDir;
+
+fn bootstrap_tool_invoke_dir() -> TempDir {
+    let dir = TempDir::new().unwrap();
+    std::fs::write(dir.path().join("test.txt"), "hello world").unwrap();
+    Command::cargo_bin("HighHarness")
+        .unwrap()
+        .current_dir(&dir)
+        .args(["bootstrap", "init", "--human", "test"])
+        .assert()
+        .success();
+    dir
+}
 
 #[test]
 fn tools_invoke_accepts_inline_json_args() {
-    // fs.read on Cargo.toml — args passed inline, not as a file path.
+    let dir = bootstrap_tool_invoke_dir();
     Command::cargo_bin("HighHarness")
         .unwrap()
+        .current_dir(&dir)
         .arg("tools")
         .arg("invoke")
         .arg("--tool")
         .arg("fs.read")
         .arg("--args")
-        .arg(r#"{"path":"Cargo.toml"}"#)
+        .arg(r#"{"path":"test.txt"}"#)
         .assert()
         .success();
 }
 
 #[test]
 fn tools_invoke_accepts_file_path_args() {
-    // Write args to a temp file; pass the path.
+    let dir = bootstrap_tool_invoke_dir();
     use std::io::Write;
     let mut tmp = tempfile::NamedTempFile::new().unwrap();
-    writeln!(tmp, r#"{{"path":"Cargo.toml"}}"#).unwrap();
+    writeln!(tmp, r#"{{"path":"test.txt"}}"#).unwrap();
     Command::cargo_bin("HighHarness")
         .unwrap()
+        .current_dir(&dir)
         .arg("tools")
         .arg("invoke")
         .arg("--tool")
@@ -35,10 +50,9 @@ fn tools_invoke_accepts_file_path_args() {
 
 #[test]
 fn tools_invoke_deny_returns_exit_3_on_harness_path_via_inline_json() {
-    use assert_cmd::Command;
-
+    let dir = bootstrap_tool_invoke_dir();
     let mut cmd = Command::cargo_bin("HighHarness").unwrap();
-    cmd.args([
+    cmd.current_dir(&dir).args([
         "tools",
         "invoke",
         "--tool",
@@ -48,7 +62,6 @@ fn tools_invoke_deny_returns_exit_3_on_harness_path_via_inline_json() {
     ]);
     let output = cmd.output().unwrap();
 
-    // Exit code 3 per HARNESS_PRIMITIVES.md §2.4 (deny) and README install sample.
     assert_eq!(
         output.status.code(),
         Some(3),

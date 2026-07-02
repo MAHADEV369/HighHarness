@@ -14,7 +14,6 @@ pub fn write(root: &Path, id: &str, payload: Value) -> HxResult<()> {
     fs::create_dir_all(&dir)?;
     let path = dir.join(format!("{}.json", id));
     fs::write(&path, serde_json::to_string_pretty(&payload)?)?;
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(())
 }
 
@@ -40,6 +39,5 @@ pub fn read(root: &Path, id: &str) -> HxResult<Value> {
             ));
         }
     }
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(v)
 }

@@ -6,30 +6,29 @@ use clap::{Parser, Subcommand};
 
 use crate::error::HxResult;
 
+/// CLI arguments for the changelog subcommand.
 #[derive(Parser, Debug)]
-/// struct `Cmd` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct Cmd {
     #[clap(subcommand)]
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// The changelog action to perform.
     pub cmd: ChangelogCmd,
 }
 
+/// Available changelog actions.
 #[derive(Subcommand, Debug)]
-/// enum `ChangelogCmd` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub enum ChangelogCmd {
     /// Append an entry from a JSON file.
     Append {
         /// Path to a JSON file conforming to schema::changelog::Entry.
         #[clap(long)]
-        /// Field `entry` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         entry: std::path::PathBuf,
     },
     /// Print the latest entry.
     Latest,
     /// Verify the chain; exit 0 if healthy.
     VerifyChain {
+        /// Optional number of trailing entries to check.
         #[clap(long)]
-        /// Field `tail` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         tail: Option<usize>,
     },
     /// Get entry N.
@@ -39,7 +38,7 @@ pub enum ChangelogCmd {
     },
 }
 
-/// fn `run` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Execute the changelog subcommand.
 pub fn run(cmd: Cmd, root: &Path) -> HxResult<i32> {
     match cmd.cmd {
         ChangelogCmd::Append { entry } => {
@@ -53,20 +52,15 @@ pub fn run(cmd: Cmd, root: &Path) -> HxResult<i32> {
             }
             let h = crate::store::changelog::append(&mut e, root)?;
             println!("{}", h);
-            /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             Ok(0)
         }
         ChangelogCmd::Latest => match crate::store::changelog::latest(root) {
-            /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             Ok(e) => {
                 println!("{}", serde_json::to_string_pretty(&e)?);
-                /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
                 Ok(0)
             }
-            /// Variant `Err` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             Err(e) => {
                 eprintln!("latest: {}", e);
-                /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
                 Ok(1)
             }
         },
@@ -75,24 +69,18 @@ pub fn run(cmd: Cmd, root: &Path) -> HxResult<i32> {
             let s = serde_json::to_string(&broken)?;
             println!("{}", s);
             if broken.is_empty() {
-                /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
                 Ok(0)
             } else {
-                /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
                 Ok(1)
             }
         }
         ChangelogCmd::Get { n } => match crate::store::changelog::get(n, root) {
-            /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             Ok(e) => {
                 println!("{}", serde_json::to_string_pretty(&e)?);
-                /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
                 Ok(0)
             }
-            /// Variant `Err` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             Err(e) => {
                 eprintln!("get: {}", e);
-                /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
                 Ok(1)
             }
         },

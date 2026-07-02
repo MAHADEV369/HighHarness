@@ -3,36 +3,36 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+/// A pending tool-execution approval request.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-/// struct `Approval` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct Approval {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Schema version for forward compatibility.
     pub schema_version: u32,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Unique identifier for this approval request.
     pub id: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Run that produced this request.
     pub run_id: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Tool name being requested.
     pub tool: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Original arguments to the tool.
     pub args: Value,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Permission rule that triggered this approval.
     pub rule_id: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Human-readable reason the approval was raised.
     pub reason: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Numeric priority (higher = more urgent).
     pub priority: i32,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Whether the tool call is destructive.
     pub destructive: bool,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Current state: "pending", "approved", "denied", "expired", or "modified".
     pub state: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Modified arguments if state is "modified".
     pub modified_args: Option<Value>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Agent rationale when state is "approved" or "denied".
     pub rationale: Option<String>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// ISO-8601 timestamp when the request was created.
     pub at: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// ISO-8601 timestamp when the request expires.
     pub expires_at: String,
     /// W5: self-authentication hash for integrity verification.
     pub self_hash: Option<String>,

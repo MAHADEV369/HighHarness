@@ -5,11 +5,13 @@
 //! no non-cryptographic path.
 
 use rand::{rngs::OsRng, RngCore};
-use std::fmt;
 
 /// Deterministic `run_id` derived from a fixed seed (the GENESIS bootstrap timestamp).
-/// Used ONLY by the canonical demo Makefile via `id-run --pin`. Normal agent runs
-/// MUST NOT use this — see HARNESS_SECURITY.md §2 (run-ids should not be predictable).
+///
+/// **WARNING**: Used ONLY by the canonical demo Makefile via `id-run --pin`.
+/// Normal agent runs MUST NOT use this — see HARNESS_SECURITY.md §2
+/// (run-ids should not be predictable).
+#[cfg(feature = "deterministic")]
 pub fn run_id_pinned(slug: &str, agent_short: &str, genesis_ts: &str) -> String {
     // Deterministic format: <genesis_ts in compact form>-<slug>-<agent-short>-pin0
     // The trailing 4 hex chars are fixed to "pin0" under --pin, signaling pinnness.
@@ -18,7 +20,10 @@ pub fn run_id_pinned(slug: &str, agent_short: &str, genesis_ts: &str) -> String 
 }
 
 /// Deterministic `agent_id` derived from a fixed seed (the GENESIS bootstrap timestamp).
-/// Used ONLY by the canonical demo Makefile via `id-agent --pin`.
+///
+/// **WARNING**: Used ONLY by the canonical demo Makefile via `id-agent --pin`.
+/// Normal agent runs MUST NOT use this — see HARNESS_SECURITY.md §2.
+#[cfg(feature = "deterministic")]
 pub fn agent_id_pinned(genesis_ts: &str) -> String {
     let ts_compact = genesis_ts.replace('-', "");
     format!("agent_pinned_{}", ts_compact)
@@ -101,9 +106,8 @@ pub fn now_compact() -> String {
     chrono::Utc::now().format("%Y-%m-%dT%H%M%SZ").to_string()
 }
 
-/// Helper: build a `Display` formatter for the byte/hex encoding used by IDs.
-#[allow(dead_code)]
-/// fn `hex` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Format bytes as a lowercase hex string.
+#[cfg(feature = "deterministic")]
 pub fn hex(bytes: &[u8]) -> String {
     let mut s = String::with_capacity(bytes.len() * 2);
     for b in bytes {

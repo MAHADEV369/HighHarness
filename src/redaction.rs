@@ -1,42 +1,47 @@
-//! Secret redaction vault per HARNESS_SECURITY.md §5.
-
-use crate::error::{HxError, HxResult};
+/// Secret redaction vault per HARNESS_SECURITY.md §5.
+///
+/// Scans content for secret patterns (AWS keys, PEM blocks, GitHub PATs,
+/// JWTs, GCP keys) and replaces matches with `<REDACTED:id>` tokens.
+/// The original values are held in-memory only (never persisted) and wiped
+/// on `wipe()` or process exit.
+use crate::error::HxResult;
 use regex::Regex;
 use serde::Serialize;
 use std::fs;
 use std::path::Path;
 use std::sync::Mutex;
 
+/// A redaction pattern loaded from `.harness/redactions.toml`.
 #[derive(Debug, Clone, Serialize)]
-/// struct `PatternSpec` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct PatternSpec {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Unique pattern identifier (e.g. "aws-access-key", "pem-block").
     pub id: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Regex pattern string used to detect secrets.
     pub regex_str: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Severity level: "low", "medium", "high", or "critical".
     pub severity: String,
     #[serde(skip)]
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Compiled regex (None if pattern failed to compile).
     pub compiled: Option<Regex>,
 }
 
+/// A single redaction applied to content: the byte range, reason, and replacement token.
 #[derive(Debug, Clone, Serialize)]
-/// struct `TextRedaction` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct TextRedaction {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Byte range `[start, end)` in the original content.
     pub range: [usize; 2],
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Pattern id that matched (e.g. "aws-access-key").
     pub reason: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Replacement token inserted into content (e.g. "<REDACTED:aws-access-key>").
     pub replacement: String,
 }
 
-/// struct `Redactions` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// The redaction engine: holds patterns and an in-memory map of
+/// (replacement_token → original_secret) for the current process.
 pub struct Redactions {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Compiled redaction patterns loaded from config.
     pub patterns: Vec<PatternSpec>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// In-memory map of (replacement_token → original_value). Process-local only.
     pub in_memory_map: Mutex<Vec<(String, String)>>,
 }
 
@@ -103,6 +108,7 @@ impl Redactions {
     }
 
     /// Apply redactions to content in-place, replacing matches with tokens.
+    /// Returns the list of redactions applied.
     pub fn apply(&self, content: &mut String) -> Vec<TextRedaction> {
         let redactions = self.scan(content);
         if redactions.is_empty() {
@@ -120,18 +126,21 @@ impl Redactions {
         redactions
     }
 
-    /// Look up the original secret for a redaction token.
-    pub fn lookup(&self, id: &str) -> Option<String> {
+    /// Look up the original secret value for a replacement token.
+    ///
+    /// `replacement_token` is the `<REDACTED:id>` string inserted by `apply()`.
+    /// Returns the original secret text if found in the in-memory map.
+    pub fn lookup(&self, replacement_token: &str) -> Option<String> {
         let map = self.in_memory_map.lock().unwrap();
         for (token, secret) in map.iter() {
-            if token == id {
+            if token == replacement_token {
                 return Some(secret.clone());
             }
         }
         None
     }
 
-    /// Wipe the in-memory redaction map.
+    /// Wipe the in-memory redaction map. Called on process exit or explicitly.
     pub fn wipe(&self) {
         let mut map = self.in_memory_map.lock().unwrap();
         map.clear();

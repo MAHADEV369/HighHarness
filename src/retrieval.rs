@@ -12,24 +12,23 @@ use serde_json::{json, Value};
 
 use crate::error::{HxError, HxResult};
 
+/// Options controlling retrieval behavior.
 #[derive(Debug, Clone, Serialize)]
-/// struct `RetrieveOpts` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct RetrieveOpts {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Sources to search (e.g., "filesystem").
     pub sources: Vec<String>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Maximum number of hits to return.
     pub max_hits: usize,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Minimum score threshold for inclusion.
     pub min_score: f32,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Maximum tokens to spend on retrieval.
     pub token_budget: u32,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Maximum tool calls allowed for retrieval.
     pub tool_call_budget: u32,
 }
 
 impl Default for RetrieveOpts {
     fn default() -> Self {
-        /// Variant `Self` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         Self {
             sources: vec!["filesystem".to_string()],
 
@@ -44,40 +43,40 @@ impl Default for RetrieveOpts {
     }
 }
 
+/// A single retrieval hit with a cited reference.
 #[derive(Debug, Clone, Serialize)]
-/// struct `Hit` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct Hit {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Source type that produced this hit.
     pub source: String,
+    /// Citation reference (e.g., "file:path#lines=1-5").
     #[serde(rename = "ref")]
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     pub ref_: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Relevance score for this hit.
     pub score: f32,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Content type of the hit (e.g., "code").
     pub kind: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Snippet of matched content.
     pub snippet: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Estimated token count of the snippet.
     pub tokens: u32,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// ISO-8601 timestamp when the hit was captured.
     pub taken_at: String,
 }
 
+/// Result of a retrieval query.
 #[derive(Debug, Clone, Serialize)]
-/// struct `RetrieveResult` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct RetrieveResult {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Schema version for this result.
     pub schema_version: u32,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// List of retrieved hits.
     pub hits: Vec<Hit>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Resources spent during retrieval (tokens, tool calls, ms).
     pub spent: Value,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Budget limits applied to this retrieval.
     pub budget: Value,
 }
 
-/// fn `retrieve` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Retrieve relevant file snippets matching a query string.
 pub fn retrieve(root: &Path, query: &str, opts: RetrieveOpts) -> HxResult<RetrieveResult> {
     if query.is_empty() {
         return Err(HxError::Other("retrieve: empty query".to_string()));
@@ -92,11 +91,8 @@ pub fn retrieve(root: &Path, query: &str, opts: RetrieveOpts) -> HxResult<Retrie
         .current_dir(root)
         .output();
     let stdout = match out {
-        /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         Ok(o) if o.status.success() => String::from_utf8_lossy(&o.stdout).to_string(),
-        /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         Ok(o) => String::from_utf8_lossy(&o.stdout).to_string(),
-        /// Variant `Err` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         Err(_) => String::new(),
     };
     let mut hits = Vec::new();
@@ -120,12 +116,10 @@ pub fn retrieve(root: &Path, query: &str, opts: RetrieveOpts) -> HxResult<Retrie
         tokens_spent += tokens;
         let ref_ = format!("file:{}#lines={}-{}", path, lineno, lineno);
         hits.push(Hit {
-            /// Field `source` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             source: "filesystem".to_string(),
             ref_,
 
             score: 1.0,
-            /// Field `kind` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             kind: "code".to_string(),
 
             snippet: redact(&snippet),
@@ -137,7 +131,6 @@ pub fn retrieve(root: &Path, query: &str, opts: RetrieveOpts) -> HxResult<Retrie
             break;
         }
     }
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(RetrieveResult {
         schema_version: 1,
         hits,
@@ -190,8 +183,7 @@ mod tests {
             "alpha alpha alpha\nalpha alpha alpha\n",
         )
         .unwrap();
-        let mut opts = RetrieveOpts::default();
-        opts.token_budget = 4; // very small
+        let opts = RetrieveOpts { token_budget: 4, ..Default::default() };
         let r = retrieve(dir.path(), "alpha", opts).unwrap();
         let spent = r.spent.get("tokens").and_then(|x| x.as_u64()).unwrap_or(0);
         assert!(spent <= 4, "spent={} exceeds budget", spent);

@@ -2,34 +2,33 @@
 //!
 //! Each child module is a pure serde struct file with no business logic.
 
-/// mod `approval` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Approval request schema.
 pub mod approval;
-/// mod `bootstrap` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Bootstrap record schema.
 pub mod bootstrap;
-/// mod `changelog` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Changelog entry schema.
 pub mod changelog;
-/// mod `clarification` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Clarification request schema.
 pub mod clarification;
-/// mod `episode` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Episode trace schemas.
 pub mod episode;
-/// mod `in_flight` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// In-flight run record schema.
 pub mod in_flight;
-/// mod `incident` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Incident record schema.
 pub mod incident;
-/// mod `integrity` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Integrity log line schema.
 pub mod integrity;
-/// mod `permission` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Permission file and rule schemas.
 pub mod permission;
-/// mod `snapshot` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Snapshot descriptor schema.
 pub mod snapshot;
-/// mod `spend` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Spend line schema.
 pub mod spend;
-/// mod `tool` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Tool descriptor and result schemas.
 pub mod tool;
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::schema::changelog::Entry;
     use crate::schema::permission::PermissionFile;
     use crate::schema::snapshot::Snapshot;
@@ -39,31 +38,19 @@ mod tests {
     fn schema_round_trip_changelog_entry() {
         let e = Entry {
             n: 1,
-            /// Field `ts` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             ts: "2026-06-29T10:14Z".to_string(),
-            /// Field `agent` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             agent: "test".to_string(),
-            /// Field `run_id` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             run_id: "r1".to_string(),
-            /// Field `tier` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             tier: "trivial".to_string(),
 
             files: vec!["a".to_string()],
-            /// Field `intent` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             intent: "i".to_string(),
-            /// Field `diff_summary` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             diff_summary: "d".to_string(),
-            /// Field `evidence` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             evidence: "e".to_string(),
-            /// Field `attribution` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             attribution: "none".to_string(),
-            /// Field `verification` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             verification: "syntactic".to_string(),
-            /// Field `status` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             status: "added".to_string(),
-            /// Field `prev_hash` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             prev_hash: "p".to_string(),
-            /// Field `this_hash` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             this_hash: "t".to_string(),
         };
         let s = serde_json::to_string(&e).unwrap();

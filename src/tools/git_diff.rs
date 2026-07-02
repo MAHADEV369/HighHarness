@@ -8,7 +8,7 @@ use serde_json::{json, Value};
 use crate::error::{HxError, HxResult};
 use crate::schema::tool::{ToolContent, ToolMeta, ToolResult};
 
-/// fn `run` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Run `git diff` against a target ref (default HEAD).
 pub fn run(args: Value, root: &Path) -> HxResult<ToolResult> {
     let target = args
         .get("target")
@@ -21,13 +21,11 @@ pub fn run(args: Value, root: &Path) -> HxResult<ToolResult> {
         .map_err(|e| HxError::Other(format!("git.diff spawn: {}", e)))?;
     let stdout = String::from_utf8_lossy(&out.stdout).to_string();
     let exit = out.status.code().unwrap_or(-1);
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(ToolResult {
         schema_version: 1,
 
         ok: out.status.success(),
         content: ToolContent {
-            /// Field `kind` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             kind: "diff".to_string(),
 
             value: Value::String(stdout),
@@ -49,7 +47,7 @@ pub fn run(args: Value, root: &Path) -> HxResult<ToolResult> {
 }
 
 #[allow(dead_code)]
-/// fn `descriptor` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Return the tool descriptor for `git.diff`.
 pub fn descriptor() -> serde_json::Value {
     json!({
         "id": "git.diff",

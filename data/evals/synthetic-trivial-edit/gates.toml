@@ -1,0 +1,4 @@
+syntactic = "skip"
+functional = "skip"
+semantic = "skip"
+regression = "skip"

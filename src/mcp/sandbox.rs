@@ -4,7 +4,7 @@ use crate::error::{HxError, HxResult};
 use crate::mcp::registry::McpServerConfig;
 use std::path::Path;
 use std::process::Stdio;
-use std::time::Duration;
+
 
 /// Handle to a spawned MCP sandbox process.
 pub struct SandboxHandle {
@@ -50,7 +50,7 @@ pub fn spawn(cfg: &McpServerConfig, root: &Path) -> HxResult<SandboxHandle> {
     cmd.stdout(Stdio::piped());
     cmd.stderr(Stdio::piped());
 
-    let child = cmd.spawn().map_err(|e| HxError::Io(e))?;
+    let child = cmd.spawn().map_err(HxError::Io)?;
 
     Ok(SandboxHandle {
         child: Some(child),

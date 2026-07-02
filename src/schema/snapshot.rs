@@ -3,49 +3,49 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+/// A point-in-time snapshot of the workspace state.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-/// struct `Snapshot` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct Snapshot {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Schema version for forward compatibility.
     pub schema_version: u32,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Unique identifier for this snapshot.
     pub snapshot_id: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Run that produced this snapshot.
     pub run_id: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Human-readable label for the snapshot.
     pub label: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Git state at the time of the snapshot.
     pub git: SnapshotGit,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Test results, if tests were run.
     pub tests: Option<SnapshotHash>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Type-check results, if type checking was run.
     pub types: Option<SnapshotHash>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Lint results, if linting was run.
     pub lint: Option<SnapshotHash>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Execution phase when the snapshot was taken.
     pub phase: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// ISO-8601 timestamp when the snapshot was taken.
     pub taken_at: String,
     /// W5: self-authentication hash for integrity verification.
     pub self_hash: Option<String>,
 }
 
+/// Git state captured at the time of a snapshot.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-/// struct `SnapshotGit` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct SnapshotGit {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Git commit hash.
     pub commit: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Whether the working tree had uncommitted changes.
     pub dirty: bool,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// One-line diff stat summary.
     pub diff_stat: String,
 }
 
+/// A hash and optional summary of a check result.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-/// struct `SnapshotHash` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct SnapshotHash {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Content hash of the check output.
     pub hash: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Optional structured summary of the check result.
     pub summary: Option<Value>,
 }

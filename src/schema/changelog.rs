@@ -3,36 +3,36 @@
 
 use serde::{Deserialize, Serialize};
 
+/// A single changelog entry recording a code change.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-/// struct `Entry` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct Entry {
+    /// Monotonic sequence number within the changelog.
     #[serde(default)]
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     pub n: u64,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// ISO-8601 timestamp of the change.
     pub ts: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Agent identifier that authored the change.
     pub agent: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Run that produced this entry.
     pub run_id: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Trust tier of the agent at the time of change.
     pub tier: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Files modified by this change.
     pub files: Vec<String>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Human-readable intent of the change.
     pub intent: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Summary of the diff produced.
     pub diff_summary: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Evidence supporting the change.
     pub evidence: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Attribution for the change.
     pub attribution: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Verification result for the change.
     pub verification: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Status of the change: "applied", "rolled-back", etc.
     pub status: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Hash of the previous changelog entry.
     pub prev_hash: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Hash of this changelog entry.
     pub this_hash: String,
 }

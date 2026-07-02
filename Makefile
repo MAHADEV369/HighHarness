@@ -1,21 +1,16 @@
-# Makefile — Phase 3 canonical Entry 1 demo
+# Makefile — canonical Entry 1 demo + reproducibility + docs
 #
-# This file is now in spec-faithful shape (per `buildedit.md` Area A.4):
-#   - `bin/HighHarness` is ../bin/HighHarness (cortex install).
-#   - `tools invoke --args '<inline-json>'` works directly (Area A.1).
-#   - `gates run --phase X --gate Y --run-id Z --changes <path>` (Area A.2).
-#   - `changelog append --entry <path>` (Area A.3).
-#   - `gates run --gate semantic --verification <json>` (Area B.4).
-#   - `--pin` is used on `id-run` / `id-agent` for reproducible canonical
-#     demo (Area F.3).
-#   - `entry-1-demo-clean` calls `scripts/prune-stale-artifacts.sh` (Area E.1).
-#   - `repro` target runs `scripts/reproducibility-check.sh` (Area F.4).
-#
-# Out-of-run adjustments to support these fixes (no D2 confession header).
+# Targets:
+#   entry-1-demo          Run the canonical demo end-to-end
+#   entry-1-demo-assert   Post-demo assertions
+#   entry-1-demo-clean    Clean stale artifacts before demo
+#   repro                 Byte-level reproducibility check
+#   docs                  Enforce missing-docs lint
+#   help                  Print available targets
 
 .PHONY: entry-1-demo entry-1-demo-clean entry-1-demo-assert repro docs help
 
-HX          ?= ../bin/HighHarness
+HX          ?= ./target/release/HighHarness
 ENTRY1_PHASE ?= highharness
 ENTRY1_TIER  ?= trivial
 ENTRY1_RUN_ID    := $(shell $(HX) id-run --slug add-version-flag --pin 2>/dev/null)
@@ -66,7 +61,7 @@ entry-1-demo: entry-1-demo-clean
 	  --run-id $(ENTRY1_RUN_ID) --agent-id $(ENTRY1_AGENT_ID) \
 	  > scripts/entry-1-edit.json; \
 	echo "-- 5. build release binary --"; \
-	cargo build --release; \
+	cargo build --release --features deterministic; \
 	./target/release/HighHarness --version > scripts/entry-1-version-out.txt; \
 	cat scripts/entry-1-version-out.txt; \
 	echo "-- 6. syntactic gate --"; \

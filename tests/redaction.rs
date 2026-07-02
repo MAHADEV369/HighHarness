@@ -1,11 +1,49 @@
 use assert_cmd::Command;
+use tempfile::TempDir;
+
+fn bootstrap_redaction_dir() -> TempDir {
+    let dir = TempDir::new().unwrap();
+    // Write a redactions.toml so the scan has patterns to match.
+    std::fs::create_dir_all(dir.path().join(".harness")).unwrap();
+    std::fs::write(
+        dir.path().join(".harness/redactions.toml"),
+        r#"schema_version = 1
+
+[[patterns]]
+id = "aws-access-key"
+regex = "AKIA[0-9A-Z]{16}"
+severity = "critical"
+
+[[patterns]]
+id = "pem-block"
+regex = "-----BEGIN [A-Z ]*PRIVATE KEY-----"
+severity = "critical"
+
+[[patterns]]
+id = "github-pat"
+regex = "gh[pousr]_[A-Za-z0-9]{36,}"
+severity = "critical"
+
+[[patterns]]
+id = "jwt"
+regex = "eyJ[A-Za-z0-9_-]{10,}\\.[A-Za-z0-9_-]{10,}\\.[A-Za-z0-9_-]{10,}"
+severity = "high"
+"#,
+    )
+    .unwrap();
+    dir
+}
 
 #[test]
 fn redaction_detects_aws_access_key() {
-    let mut cmd = Command::cargo_bin("HighHarness").unwrap();
-    cmd.args(["redaction", "scan"])
-        .write_stdin("AKIAIOSFODNN7EXAMPLE");
-    let output = cmd.output().unwrap();
+    let dir = bootstrap_redaction_dir();
+    let output = Command::cargo_bin("HighHarness")
+        .unwrap()
+        .current_dir(&dir)
+        .args(["redaction", "scan"])
+        .write_stdin("AKIAIOSFODNN7EXAMPLE")
+        .output()
+        .unwrap();
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(
@@ -17,10 +55,14 @@ fn redaction_detects_aws_access_key() {
 
 #[test]
 fn redaction_detects_github_pat() {
-    let mut cmd = Command::cargo_bin("HighHarness").unwrap();
-    cmd.args(["redaction", "scan"])
-        .write_stdin("ghp_abcdefghijklmnopqrstuvwxyzABCDEFGHIJ123456");
-    let output = cmd.output().unwrap();
+    let dir = bootstrap_redaction_dir();
+    let output = Command::cargo_bin("HighHarness")
+        .unwrap()
+        .current_dir(&dir)
+        .args(["redaction", "scan"])
+        .write_stdin("ghp_abcdefghijklmnopqrstuvwxyzABCDEFGHIJ123456")
+        .output()
+        .unwrap();
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(
@@ -32,10 +74,14 @@ fn redaction_detects_github_pat() {
 
 #[test]
 fn redaction_detects_jwt() {
-    let mut cmd = Command::cargo_bin("HighHarness").unwrap();
-    cmd.args(["redaction", "scan"])
-        .write_stdin("eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3j6T3XqoP1D");
-    let output = cmd.output().unwrap();
+    let dir = bootstrap_redaction_dir();
+    let output = Command::cargo_bin("HighHarness")
+        .unwrap()
+        .current_dir(&dir)
+        .args(["redaction", "scan"])
+        .write_stdin("eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3j6T3XqoP1D")
+        .output()
+        .unwrap();
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(
@@ -47,9 +93,13 @@ fn redaction_detects_jwt() {
 
 #[test]
 fn redaction_list_shows_patterns() {
-    let mut cmd = Command::cargo_bin("HighHarness").unwrap();
-    cmd.args(["redaction", "list"]);
-    let output = cmd.output().unwrap();
+    let dir = bootstrap_redaction_dir();
+    let output = Command::cargo_bin("HighHarness")
+        .unwrap()
+        .current_dir(&dir)
+        .args(["redaction", "list"])
+        .output()
+        .unwrap();
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("aws-access-key"));
@@ -60,13 +110,17 @@ fn redaction_list_shows_patterns() {
 
 #[test]
 fn redaction_does_not_redact_64char_sha256() {
-    let mut cmd = Command::cargo_bin("HighHarness").unwrap();
+    let dir = bootstrap_redaction_dir();
     let sha = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
-    cmd.args(["redaction", "scan"]).write_stdin(sha);
-    let output = cmd.output().unwrap();
+    let output = Command::cargo_bin("HighHarness")
+        .unwrap()
+        .current_dir(&dir)
+        .args(["redaction", "scan"])
+        .write_stdin(sha)
+        .output()
+        .unwrap();
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    // Should not match any pattern (no REDACTED)
     assert!(
         !stdout.contains("REDACTED"),
         "SHA-256 should not be redacted: {}",
@@ -76,11 +130,16 @@ fn redaction_does_not_redact_64char_sha256() {
 
 #[test]
 fn redaction_detects_pem_block() {
-    let mut cmd = Command::cargo_bin("HighHarness").unwrap();
-    cmd.args(["redaction", "scan"]).write_stdin(
-        "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA\n-----END RSA PRIVATE KEY-----",
-    );
-    let output = cmd.output().unwrap();
+    let dir = bootstrap_redaction_dir();
+    let output = Command::cargo_bin("HighHarness")
+        .unwrap()
+        .current_dir(&dir)
+        .args(["redaction", "scan"])
+        .write_stdin(
+            "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA\n-----END RSA PRIVATE KEY-----",
+        )
+        .output()
+        .unwrap();
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(
@@ -92,30 +151,56 @@ fn redaction_detects_pem_block() {
 
 #[test]
 fn redaction_scan_accepts_file_flag() {
+    let dir = bootstrap_redaction_dir();
     use std::io::Write;
     let mut tmp = tempfile::NamedTempFile::new().unwrap();
     writeln!(tmp, "AKIAIOSFODNN7EXAMPLE").unwrap();
-    let mut cmd = Command::cargo_bin("HighHarness").unwrap();
-    cmd.args(["redaction", "scan", "--file", tmp.path().to_str().unwrap()]);
-    let output = cmd.output().unwrap();
+    let output = Command::cargo_bin("HighHarness")
+        .unwrap()
+        .current_dir(&dir)
+        .args(["redaction", "scan", "--file", tmp.path().to_str().unwrap()])
+        .output()
+        .unwrap();
     assert!(output.status.success());
 }
 
 #[test]
 fn tools_invoke_redacts_secret_in_output() {
-    use std::io::Write;
-    let mut tmp = tempfile::NamedTempFile::new().unwrap();
-    writeln!(tmp, "AKIAIOSFODNN7EXAMPLE").unwrap();
-    let mut cmd = Command::cargo_bin("HighHarness").unwrap();
-    cmd.args([
-        "tools",
-        "invoke",
-        "--tool",
-        "fs.read",
-        "--args",
-        &format!(r#"{{"path":"{}"}}"#, tmp.path().display()),
-    ]);
-    let output = cmd.output().unwrap();
+    let dir = TempDir::new().unwrap();
+    // Bootstrap so tools are available.
+    Command::cargo_bin("HighHarness")
+        .unwrap()
+        .current_dir(&dir)
+        .args(["bootstrap", "init", "--human", "test"])
+        .assert()
+        .success();
+    // Add redaction patterns.
+    std::fs::write(
+        dir.path().join(".harness/redactions.toml"),
+        r#"schema_version = 1
+
+[[patterns]]
+id = "aws-access-key"
+regex = "AKIA[0-9A-Z]{16}"
+severity = "critical"
+"#,
+    )
+    .unwrap();
+    // Create a test file in the temp dir.
+    std::fs::write(dir.path().join("secret.txt"), "AKIAIOSFODNN7EXAMPLE").unwrap();
+    let output = Command::cargo_bin("HighHarness")
+        .unwrap()
+        .current_dir(&dir)
+        .args([
+            "tools",
+            "invoke",
+            "--tool",
+            "fs.read",
+            "--args",
+            r#"{"path":"secret.txt"}"#,
+        ])
+        .output()
+        .unwrap();
     assert!(output.status.success());
 }
 

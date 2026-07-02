@@ -71,7 +71,6 @@ pub fn open(
         .open(&ifp)?;
     writeln!(f2, "{}", serde_json::to_string(&line)?)?;
 
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(())
 }
 
@@ -103,7 +102,6 @@ pub fn append(root: &Path, run_id: &str, section: &str, body: &str) -> HxResult<
         .open(&path)?;
     f.write_all(txt.as_bytes())?;
     f.sync_data()?;
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(())
 }
 
@@ -219,7 +217,6 @@ pub fn close(
         fs::write(&ifp, s)?;
     }
 
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(h)
 }
 
@@ -227,7 +224,6 @@ pub fn close(
 pub fn hash(root: &Path, run_id: &str) -> HxResult<String> {
     let path = episodes_dir(root).join(format!("{}.md", run_id));
     let txt = fs::read_to_string(&path)?;
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(canonical::episode_hash(&txt))
 }
 

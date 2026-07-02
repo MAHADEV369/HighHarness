@@ -6,16 +6,16 @@ use clap::{Parser, Subcommand};
 
 use crate::error::HxResult;
 
+/// CLI arguments for the eval subcommand.
 #[derive(Parser, Debug)]
-/// struct `Cmd` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct Cmd {
     #[clap(subcommand)]
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// The eval action to perform.
     pub cmd: EvalCmd,
 }
 
+/// Available eval actions.
 #[derive(Subcommand, Debug)]
-/// enum `EvalCmd` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub enum EvalCmd {
     /// List all available evals.
     List,
@@ -25,12 +25,11 @@ pub enum EvalCmd {
         id: String,
         /// Optional run id (auto-generated if omitted).
         #[clap(long)]
-        /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         run_id: Option<String>,
     },
 }
 
-/// fn `run` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Execute the eval subcommand.
 pub fn run(cmd: Cmd, root: &Path) -> HxResult<i32> {
     match cmd.cmd {
         EvalCmd::List => {
@@ -38,13 +37,11 @@ pub fn run(cmd: Cmd, root: &Path) -> HxResult<i32> {
             for s in &summaries {
                 println!("{} | {} | {}", s.id, s.kind, s.created_at);
             }
-            /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             Ok(0)
         }
         EvalCmd::Run { id, run_id: _ } => {
             let result = crate::eval::run(&id, root)?;
             println!("{}", serde_json::to_string_pretty(&result)?);
-            /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             Ok(0)
         }
     }

@@ -107,8 +107,7 @@ pub fn serialize_entry(entry: &Entry) -> Vec<u8> {
     // spaces on the this_hash line (the column-16 padding); those are part of the
     // canonical form. We only ensure the LAST byte is '\n' (which it already is
     // since every line ends with \n).
-    let bytes = out.into_bytes();
-    bytes
+    out.into_bytes()
 }
 
 /// Compute `this_hash = SHA-256` over the canonical entry bytes with
@@ -135,7 +134,7 @@ pub fn episode_bytes_for_hash(episode_text: &str) -> Vec<u8> {
     // Find the "## Episode hash" section start.
     let marker = "\n## Episode hash";
     if let Some(idx) = normalized.find(marker) {
-        normalized[..idx].as_bytes().to_vec()
+        normalized.as_bytes()[..idx].to_vec()
     } else {
         // If not present, return the full normalized text (edge case for tests).
         normalized.as_bytes().to_vec()
@@ -171,7 +170,6 @@ pub fn verify_entry_self_hash(entry: &Entry) -> HxResult<String> {
             got: computed,
         });
     }
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(computed)
 }
 
@@ -181,17 +179,12 @@ mod tests {
     use crate::schema::changelog::Entry;
 
     fn fixture_entry() -> Entry {
-        /// Variant `Entry` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         Entry {
 
             n: 1,
-            /// Field `ts` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             ts: "2026-06-29T10:14Z".to_string(),
-            /// Field `agent` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             agent: "opencode-go/glm-5.2".to_string(),
-            /// Field `run_id` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             run_id: "2026-06-29T1014Z-fix-auth-leak-3f9a-a1b2".to_string(),
-            /// Field `tier` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             tier: "safety-critical".to_string(),
             files: vec![
                 "src/auth/session.js".to_string(),
@@ -199,19 +192,12 @@ mod tests {
                 "CHANGELOG.agent.md".to_string(),
                 "logs/episodes/2026-06-29T1014Z-fix-auth-leak-3f9a-a1b2.md".to_string(),
             ],
-            /// Field `intent` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             intent: "Patch session token leak where refresh tokens were logged on error and add a regression test.".to_string(),
-            /// Field `diff_summary` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             diff_summary: "Replaced console.error(err.refreshToken) at src/auth/session.js:82 with\n                console.error('auth_error_id=' + err.id); added redaction assertion at\n                tests/auth.spec.js:31; appended this changelog entry and the run's episode file.".to_string(),
-            /// Field `evidence` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             evidence: "npm test → 141/141 passing; npm run lint → 0 errors; gate logs attached;\n                snapshot.diff +1 test 0 regressions, types/lint hashes unchanged.".to_string(),
-            /// Field `attribution` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             attribution: "env".to_string(),
-            /// Field `verification` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             verification: "full".to_string(),
-            /// Field `status` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             status: "modified".to_string(),
-            /// Field `prev_hash` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             prev_hash: "0000000000000000000000000000000000000000000000000000000000000000".to_string(),
 
             this_hash: String::new(),

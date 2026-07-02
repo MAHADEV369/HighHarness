@@ -6,41 +6,40 @@ use clap::{Parser, Subcommand};
 
 use crate::error::HxResult;
 
+/// CLI arguments for the metrics subcommand.
 #[derive(Parser, Debug)]
-/// struct `Cmd` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct Cmd {
     #[clap(subcommand)]
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// The metrics action to perform.
     pub cmd: MetricsCmd,
 }
 
+/// Available metrics actions.
 #[derive(Subcommand, Debug)]
-/// enum `MetricsCmd` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub enum MetricsCmd {
-    /// Variant `Rollup` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Compute a metrics rollup for the given window.
     Rollup {
         /// Window size: "7d", "30d", or "90d".
         #[clap(long)]
         window: String,
     },
-    /// Variant `Alert` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Evaluate alerts over the given window.
     Alert {
         /// Window size: "7d", "30d", or "90d".
         #[clap(long)]
         window: String,
     },
-    /// Variant `Health` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Print a simple health summary.
     Health,
 }
 
-/// fn `run` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Execute the metrics subcommand.
 pub fn run(cmd: Cmd, root: &Path) -> HxResult<i32> {
     match cmd.cmd {
         MetricsCmd::Rollup { window } => {
             let dur = crate::metrics::parse_window(&window);
             let r = crate::metrics::rollup(root, &dur)?;
             println!("{}", serde_json::to_string_pretty(&r)?);
-            /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             Ok(0)
         }
         MetricsCmd::Alert { window } => {
@@ -48,7 +47,6 @@ pub fn run(cmd: Cmd, root: &Path) -> HxResult<i32> {
             let r = crate::metrics::rollup(root, &dur)?;
             let alerts = crate::metrics::evaluate_alerts(&r, root);
             println!("{}", serde_json::to_string_pretty(&alerts)?);
-            /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             Ok(0)
         }
         MetricsCmd::Health => {
@@ -77,7 +75,6 @@ pub fn run(cmd: Cmd, root: &Path) -> HxResult<i32> {
             } else {
                 println!("health: stale — no rollup in the last 24h");
             }
-            /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             Ok(0)
         }
     }

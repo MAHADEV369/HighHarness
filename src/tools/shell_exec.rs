@@ -10,7 +10,7 @@ use tokio::process::Command as TokioCommand;
 use crate::error::{HxError, HxResult};
 use crate::schema::tool::{ToolContent, ToolMeta, ToolResult};
 
-/// fn `run` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Spawn a shell command with working directory, env, and timeout.
 pub fn run(args: Value, root: &Path) -> HxResult<ToolResult> {
     // For tests we use the synchronous Command to avoid pulling tokio runtime
     // into library tests. Production can switch to async.
@@ -44,16 +44,13 @@ async fn async_run(args: Value, root: &Path) -> HxResult<ToolResult> {
 
     let fut = command.output();
     let result = match tokio::time::timeout(Duration::from_millis(timeout_ms), fut).await {
-        /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         Ok(r) => r.map_err(|e| HxError::Other(format!("shell.exec spawn: {}", e)))?,
-        /// Variant `Err` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         Err(_) => {
             return Ok(ToolResult {
                 schema_version: 1,
 
                 ok: false,
                 content: ToolContent {
-                    /// Field `kind` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
                     kind: "error".to_string(),
 
                     value: Value::String(format!("timeout after {} ms", timeout_ms)),
@@ -80,13 +77,11 @@ async fn async_run(args: Value, root: &Path) -> HxResult<ToolResult> {
     let stderr = String::from_utf8_lossy(&result.stderr).to_string();
     let combined = format!("{}{}", stdout, stderr);
     let bytes = combined.len() as u64;
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(ToolResult {
         schema_version: 1,
 
         ok: result.status.success(),
         content: ToolContent {
-            /// Field `kind` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             kind: "text".to_string(),
 
             value: Value::String(combined),
@@ -108,7 +103,7 @@ async fn async_run(args: Value, root: &Path) -> HxResult<ToolResult> {
 }
 
 #[allow(dead_code)]
-/// fn `descriptor` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Return the tool descriptor for `shell.exec`.
 pub fn descriptor() -> serde_json::Value {
     json!({
         "id": "shell.exec",

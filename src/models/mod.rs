@@ -11,57 +11,58 @@ use toml::Value as TomlValue;
 use crate::error::{HxError, HxResult};
 use crate::store::{models_path, routing_path};
 
+/// OpenAI-chat-completions-compatible provider adapter.
 pub mod openai_compat;
 
+/// Descriptor for a registered model.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-/// struct `ModelDescriptor` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct ModelDescriptor {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Unique model identifier.
     pub id: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Provider name (e.g., "openai", "anthropic").
     pub provider: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Maximum context window size in tokens.
     pub context_window: u64,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Model capabilities (JSON).
     pub capabilities: Value,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Pricing information (JSON).
     pub pricing: Value,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Privacy level classification (JSON).
     pub privacy: Value,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Authentication method required.
     pub auth: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Model tier (e.g., "standard", "premium").
     pub tier: String,
 }
 
+/// A routing rule mapping a feature to a model.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-/// struct `RouteEntry` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct RouteEntry {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Feature name (e.g., "chat", "completion").
     pub feature: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Primary model ID for this feature.
     pub primary: String,
+    /// Fallback model IDs if primary is unavailable.
     #[serde(default)]
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     pub fallback: Vec<String>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Routing mode ("primary-only", "failover", "manual").
     pub mode: String,
 }
 
+/// Resolved routing decision for a feature.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-/// struct `RouteDecision` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct RouteDecision {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Feature name.
     pub feature: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Selected primary model ID.
     pub primary: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Available fallback model IDs.
     pub fallback: Vec<String>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Routing mode.
     pub mode: String,
 }
 
-/// fn `load_models` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Load model descriptors from the models TOML file.
 pub fn load_models(root: &Path) -> HxResult<Vec<ModelDescriptor>> {
     let p = models_path(root);
     if !p.exists() {
@@ -80,11 +81,10 @@ pub fn load_models(root: &Path) -> HxResult<Vec<ModelDescriptor>> {
             out.push(d);
         }
     }
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(out)
 }
 
-/// fn `load_routes` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Load routing entries from the routing TOML file.
 pub fn load_routes(root: &Path) -> HxResult<Vec<RouteEntry>> {
     let p = routing_path(root);
     if !p.exists() {
@@ -103,11 +103,10 @@ pub fn load_routes(root: &Path) -> HxResult<Vec<RouteEntry>> {
             out.push(e);
         }
     }
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(out)
 }
 
-/// fn `route` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Resolve the routing decision for a feature.
 pub fn route(feature: &str, root: &Path) -> HxResult<RouteDecision> {
     let routes = load_routes(root)?;
     for r in routes {
@@ -123,14 +122,13 @@ pub fn route(feature: &str, root: &Path) -> HxResult<RouteDecision> {
             });
         }
     }
-    /// Variant `Err` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Err(HxError::NotYetEnforced {
         what: format!("no route for feature {}", feature),
     })
 }
 
 #[allow(dead_code)]
-/// fn `empty_descriptor` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Return an empty model descriptor JSON object.
 pub fn empty_descriptor() -> Value {
     json!({})
 }

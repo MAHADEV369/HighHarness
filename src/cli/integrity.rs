@@ -6,27 +6,27 @@ use clap::{Parser, Subcommand};
 
 use crate::error::HxResult;
 
+/// CLI arguments for the integrity subcommand.
 #[derive(Parser, Debug)]
-/// struct `Cmd` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct Cmd {
     #[clap(subcommand)]
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// The integrity action to perform.
     pub cmd: IntegrityCmd,
 }
 
+/// Available integrity actions.
 #[derive(Subcommand, Debug)]
-/// enum `IntegrityCmd` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub enum IntegrityCmd {
-    /// Variant `Verify` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Verify the integrity log chain.
     Verify,
-    /// Variant `Append` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Append an event to the integrity log.
     Append {
         /// Event name to record in the integrity log.
         event: String,
     },
 }
 
-/// fn `run` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Execute the integrity subcommand.
 pub fn run(cmd: Cmd, root: &Path) -> HxResult<i32> {
     match cmd.cmd {
         IntegrityCmd::Verify => {
@@ -34,10 +34,8 @@ pub fn run(cmd: Cmd, root: &Path) -> HxResult<i32> {
             let s = serde_json::to_string(&broken)?;
             println!("{}", s);
             if broken.is_empty() {
-                /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
                 Ok(0)
             } else {
-                /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
                 Ok(1)
             }
         }
@@ -45,11 +43,9 @@ pub fn run(cmd: Cmd, root: &Path) -> HxResult<i32> {
             let h = crate::telemetry::integrity::append(
                 root,
                 &event,
-                /// Field `serde_json` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
                 serde_json::json!({"by": "human"}),
             )?;
             println!("{}", h);
-            /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             Ok(0)
         }
     }

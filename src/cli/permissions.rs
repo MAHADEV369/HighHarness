@@ -6,32 +6,32 @@ use clap::{Parser, Subcommand};
 
 use crate::error::HxResult;
 
+/// CLI arguments for the permissions subcommand.
 #[derive(Parser, Debug)]
-/// struct `Cmd` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct Cmd {
     #[clap(subcommand)]
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// The permission action to perform.
     pub cmd: PermSub,
 }
 
+/// Available permission actions.
 #[derive(Subcommand, Debug)]
-/// enum `PermSub` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub enum PermSub {
-    /// Variant `List` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// List all permission rules.
     List,
-    /// Variant `Check` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Check a tool invocation against permission rules.
     Check {
+        /// Tool identifier to check.
         #[clap(long)]
-        /// Field `tool` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         tool: String,
 
+        /// Path to a JSON file with the tool arguments.
         #[clap(long)]
-        /// Field `args` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         args: std::path::PathBuf,
     },
 }
 
-/// fn `run` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Execute the permissions subcommand.
 pub fn run(cmd: Cmd, root: &Path) -> HxResult<i32> {
     match cmd.cmd {
         PermSub::List => {
@@ -39,7 +39,6 @@ pub fn run(cmd: Cmd, root: &Path) -> HxResult<i32> {
             for r in &pf.rules {
                 println!("{}\t{}\t{}\t{}", r.id, r.effect, r.priority, r.tool);
             }
-            /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             Ok(0)
         }
         PermSub::Check { tool, args } => {
@@ -53,7 +52,6 @@ pub fn run(cmd: Cmd, root: &Path) -> HxResult<i32> {
             let pf = crate::permissions::load(root)?;
             let d = crate::permissions::check(&pf, &desc, &args_value, None, "ad-hoc")?;
             println!("{}", serde_json::to_string_pretty(&d)?);
-            /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             Ok(0)
         }
     }

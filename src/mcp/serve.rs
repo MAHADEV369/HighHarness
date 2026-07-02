@@ -12,9 +12,9 @@
 //! - `tools/call` — invoke a tool by name
 //! - `shutdown` — graceful exit
 
-use crate::error::{HxError, HxResult};
+use crate::error::HxResult;
 use crate::id;
-use crate::tools::registry::{InvokeCtx, Registry, ScopeNarrow};
+use crate::tools::registry::{InvokeCtx, Registry};
 use serde_json::Value;
 use std::io::{BufRead, Write};
 use std::path::Path;

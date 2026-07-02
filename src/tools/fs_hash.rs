@@ -10,7 +10,7 @@ use serde_json::{json, Value};
 use crate::error::{HxError, HxResult};
 use crate::schema::tool::{ToolContent, ToolMeta, ToolResult};
 
-/// fn `run` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Compute the SHA-256 hash of a file.
 pub fn run(args: Value, root: &Path) -> HxResult<ToolResult> {
     let path = args
         .get("path")
@@ -21,13 +21,11 @@ pub fn run(args: Value, root: &Path) -> HxResult<ToolResult> {
     let mut h = Sha256::new();
     h.update(&bytes);
     let hex = format!("{:x}", h.finalize());
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(ToolResult {
         schema_version: 1,
 
         ok: true,
         content: ToolContent {
-            /// Field `kind` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             kind: "text".to_string(),
 
             value: Value::String(hex),
@@ -49,7 +47,7 @@ pub fn run(args: Value, root: &Path) -> HxResult<ToolResult> {
 }
 
 #[allow(dead_code)]
-/// fn `descriptor` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Return the tool descriptor for `fs.hash`.
 pub fn descriptor() -> serde_json::Value {
     json!({
         "id": "fs.hash",

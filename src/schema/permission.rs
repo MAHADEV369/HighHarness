@@ -2,38 +2,38 @@
 
 use serde::{Deserialize, Serialize};
 
+/// A permission configuration file containing access rules.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-/// struct `PermissionFile` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct PermissionFile {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Schema version for forward compatibility.
     pub schema_version: u32,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Ordered list of permission rules.
     pub rules: Vec<Rule>,
 }
 
+/// A single permission rule controlling tool access.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-/// struct `Rule` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct Rule {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Unique rule identifier.
     pub id: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Effect of the rule: "allow", "deny", or "ask".
     pub effect: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Tool name this rule applies to (or "*" for all tools).
     pub tool: String,
+    /// File path patterns this rule applies to.
     #[serde(default)]
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     pub paths: Vec<String>,
+    /// Network host patterns this rule applies to.
     #[serde(default)]
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     pub network: Vec<String>,
+    /// Environment variable patterns this rule applies to.
     #[serde(default)]
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     pub env: Vec<String>,
+    /// Whether this rule affects safety-critical operations.
     #[serde(default)]
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     pub safety: bool,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Human-readable reason for this rule.
     pub reason: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Numeric priority (higher = evaluated first).
     pub priority: i32,
 }

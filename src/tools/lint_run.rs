@@ -4,11 +4,11 @@ use std::path::Path;
 
 use serde_json::{json, Value};
 
-use crate::error::{HxError, HxResult};
+use crate::error::HxResult;
 use crate::schema::tool::ToolResult;
 use crate::store::config_path;
 
-/// fn `run` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Execute the configured lint command via `shell.exec`.
 pub fn run(args: Value, root: &Path) -> HxResult<ToolResult> {
     let phase = args
         .get("phase")
@@ -29,7 +29,7 @@ fn read_lint_cmd(root: &Path) -> Option<String> {
 }
 
 #[allow(dead_code)]
-/// fn `descriptor` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Return the tool descriptor for `lint.run`.
 pub fn descriptor() -> serde_json::Value {
     json!({
         "id": "lint.run",

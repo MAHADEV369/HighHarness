@@ -7,18 +7,18 @@ use clap::{Parser, Subcommand};
 
 use crate::error::HxResult;
 
+/// CLI arguments for the cadence subcommand.
 #[derive(Parser, Debug)]
-/// struct `Cmd` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct Cmd {
     #[clap(subcommand)]
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// The cadence action to perform.
     pub cmd: CadenceCmd,
 }
 
+/// Available cadence actions.
 #[derive(Subcommand, Debug)]
-/// enum `CadenceCmd` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub enum CadenceCmd {
-    /// Variant `Run` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Run a cadence rollup for the specified window.
     Run {
         /// Run daily cadence.
         #[clap(long)]
@@ -32,7 +32,7 @@ pub enum CadenceCmd {
     },
 }
 
-/// fn `run` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Execute the cadence subcommand.
 pub fn run(cmd: Cmd, root: &Path) -> HxResult<i32> {
     match cmd.cmd {
         CadenceCmd::Run {
@@ -95,7 +95,6 @@ pub fn run(cmd: Cmd, root: &Path) -> HxResult<i32> {
                 println!("ok: rollup fresh");
             }
 
-            /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             Ok(0)
         }
     }

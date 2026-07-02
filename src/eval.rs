@@ -10,56 +10,55 @@ use crate::error::{HxError, HxResult};
 use crate::id;
 use crate::tools::registry::{InvokeCtx, Registry};
 
+/// Summary of a single eval fixture discovered on disk.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-/// struct `EvalSummary` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct EvalSummary {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Unique eval identifier (directory name).
     pub id: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Task kind parsed from the first line of `task.md`.
     pub kind: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Git commit hash (currently unused).
     pub commit: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// ISO-8601 creation timestamp of `task.md`.
     pub created_at: String,
 }
 
+/// Result of a single eval run.
 #[derive(Debug, Serialize)]
-/// struct `EvalResult` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct EvalResult {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Schema version for artifact compatibility.
     pub schema_version: u32,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// ID of the eval fixture that was run.
     pub eval_id: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Unique run identifier.
     pub run_id: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// ISO-8601 timestamp when the run started.
     pub started_at: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// ISO-8601 timestamp when the run finished.
     pub finished_at: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Individual check outcomes.
     pub outcomes: Vec<EvalOutcome>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Whether all outcomes passed.
     pub passed: bool,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Paths to generated artifact files.
     pub artifact_paths: Vec<String>,
 }
 
+/// A single check outcome within an eval run.
 #[derive(Debug, Serialize)]
-/// struct `EvalOutcome` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct EvalOutcome {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Check identifier (e.g., `tool_call_0`, `golden/file.txt`).
     pub check: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Result status: `pass`, `fail`, or `blocked`.
     pub status: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Human-readable evidence for the outcome.
     pub evidence: String,
 }
 
-/// fn `list` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// List all eval fixtures under `.harness/evals/`.
 pub fn list(root: &Path) -> HxResult<Vec<EvalSummary>> {
     let evals_dir = crate::store::harness_dir(root).join("evals");
     if !evals_dir.exists() {
-        /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         return Ok(Vec::new());
     }
     let mut summaries = Vec::new();
@@ -95,11 +94,10 @@ pub fn list(root: &Path) -> HxResult<Vec<EvalSummary>> {
         });
     }
     summaries.sort_by(|a, b| a.id.cmp(&b.id));
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(summaries)
 }
 
-/// fn `run` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Execute an eval by ID: parse `task.md`, invoke tools, check golden/forbidden files.
 pub fn run(id: &str, root: &Path) -> HxResult<EvalResult> {
     let started_at = id::now_iso();
     let run_id = id::run_id("eval", "hh");
@@ -134,7 +132,6 @@ pub fn run(id: &str, root: &Path) -> HxResult<EvalResult> {
         };
         let result = registry.invoke_raw(tool, args, &ctx, None, root);
         match result {
-            /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             Ok(r) => {
                 outcomes.push(EvalOutcome {
                     check: format!("tool_call_{}", i),
@@ -146,7 +143,6 @@ pub fn run(id: &str, root: &Path) -> HxResult<EvalResult> {
                     evidence: r.content.value.to_string(),
                 });
             }
-            /// Variant `Err` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             Err(e) => {
                 outcomes.push(EvalOutcome {
                     check: format!("tool_call_{}", i),
@@ -257,6 +253,5 @@ pub fn run(id: &str, root: &Path) -> HxResult<EvalResult> {
     };
     let json = serde_json::to_string_pretty(&result)?;
     fs::write(&artifact_path, &json)?;
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(result)
 }

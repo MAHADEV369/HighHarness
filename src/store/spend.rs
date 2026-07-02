@@ -36,7 +36,6 @@ pub fn append(root: &Path, mut line: SpendLine) -> HxResult<()> {
     let s = serde_json::to_string(&line)?;
     writeln!(f, "{}", s)?;
     f.sync_data()?;
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(())
 }
 
@@ -72,7 +71,6 @@ pub fn summary(root: &Path, month: &str) -> HxResult<Value> {
         total_out += v.output_tokens;
         count += 1;
     }
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(json!({
         "month": month,
         "count": count,
@@ -84,7 +82,6 @@ pub fn summary(root: &Path, month: &str) -> HxResult<Value> {
 
 /// Helper: current month string (YYYY-MM) in UTC.
 #[allow(dead_code)]
-/// fn `current_month` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub fn current_month() -> String {
     let now = chrono::Utc::now();
     format!("{:04}-{:02}", now.year(), now.month())
@@ -98,18 +95,13 @@ mod tests {
     use tempfile::TempDir;
 
     fn mk_line(usd: f64) -> SpendLine {
-        /// Variant `SpendLine` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         SpendLine {
             schema_version: 1,
 
             ts: format!("{}-01T00:00:00Z", "2026-01"),
-            /// Field `run_id` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             run_id: "r".to_string(),
-            /// Field `agent_id` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             agent_id: "a".to_string(),
-            /// Field `model_id` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             model_id: "m".to_string(),
-            /// Field `feature` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             feature: "chat".to_string(),
 
             input_tokens: 100,
@@ -118,9 +110,7 @@ mod tests {
 
             reasoning_tokens: 0,
             usd,
-            /// Field `routing_mode` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             routing_mode: "manual".to_string(),
-            /// Field `provider` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             provider: "anthropic".to_string(),
 
             metadata: json!({}),

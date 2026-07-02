@@ -2,23 +2,23 @@
 
 use serde::{Deserialize, Serialize};
 
+/// A record of a currently running harness session.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-/// struct `InFlight` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct InFlight {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Schema version for forward compatibility.
     pub schema_version: u32,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Unique identifier for this run.
     pub run_id: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Agent that is executing the run.
     pub agent_id: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// ISO-8601 timestamp when the run was opened.
     pub opened_at: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Current execution phase.
     pub phase: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Trust tier of the agent.
     pub tier: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Current state of the run.
     pub state: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// OS process ID, if available.
     pub pid: Option<u32>,
 }

@@ -6,28 +6,28 @@ use glob::Pattern;
 use serde::Serialize;
 use serde_json::Value;
 
-use crate::error::{HxError, HxResult};
+use crate::error::HxResult;
 use crate::schema::permission::PermissionFile;
 use crate::schema::tool::ToolDescriptor;
 use crate::store::permissions_path;
 use crate::tools::registry::ScopeNarrow;
 
+/// Outcome of a permission check.
 #[derive(Debug, Clone, Serialize)]
-/// struct `Decision` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct Decision {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Schema version for this decision.
     pub schema_version: u32,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
-    pub decision: String, // "allow" | "deny" | "ask"
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Decision result: "allow", "deny", or "ask".
+    pub decision: String,
+    /// ID of the rule that produced this decision.
     pub rule_id: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Human-readable reason for the decision.
     pub reason: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Effective allowed file paths after narrowing.
     pub effective_paths: Vec<String>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Effective allowed network targets after narrowing.
     pub effective_network: Vec<String>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Tool call ID this decision applies to.
     pub tool_call_id: String,
 }
 
@@ -44,7 +44,6 @@ pub fn load(root: &Path) -> HxResult<PermissionFile> {
     }
     let raw = std::fs::read_to_string(&path)?;
     let pf: PermissionFile = toml::from_str(&raw)?;
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(pf)
 }
 
@@ -100,11 +99,8 @@ pub fn check(
         // Default deny
         return Ok(Decision {
             schema_version: 1,
-            /// Field `decision` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             decision: "deny".to_string(),
-            /// Field `rule_id` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             rule_id: "_default".to_string(),
-            /// Field `reason` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             reason: "no-allow-rule".to_string(),
 
             effective_paths: vec![],
@@ -128,7 +124,6 @@ pub fn check(
     if first.effect == "ask" {
         return Ok(Decision {
             schema_version: 1,
-            /// Field `decision` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             decision: "ask".to_string(),
 
             rule_id: first.id.clone(),
@@ -146,7 +141,6 @@ pub fn check(
     if first.effect == "deny" {
         return Ok(Decision {
             schema_version: 1,
-            /// Field `decision` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             decision: "deny".to_string(),
 
             rule_id: first.id.clone(),
@@ -164,7 +158,7 @@ pub fn check(
     // effect == "allow"
     let mut effective_paths = first.paths.clone();
     let mut effective_network = first.network.clone();
-    let mut effective_env = first.env.clone();
+    let effective_env = first.env.clone();
 
     // 5. scope narrow
     if let Some(narrow) = scope_narrow {
@@ -175,11 +169,9 @@ pub fn check(
             if effective_paths.is_empty() {
                 return Ok(Decision {
                     schema_version: 1,
-                    /// Field `decision` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
                     decision: "deny".to_string(),
 
                     rule_id: first.id.clone(),
-                    /// Field `reason` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
                     reason: "scope-empty".to_string(),
                     effective_paths,
                     effective_network,
@@ -192,11 +184,9 @@ pub fn check(
                 if !in_narrow {
                     return Ok(Decision {
                         schema_version: 1,
-                        /// Field `decision` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
                         decision: "deny".to_string(),
 
                         rule_id: first.id.clone(),
-                        /// Field `reason` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
                         reason: "scope-empty".to_string(),
                         effective_paths,
                         effective_network,
@@ -211,11 +201,9 @@ pub fn check(
             if effective_network.is_empty() {
                 return Ok(Decision {
                     schema_version: 1,
-                    /// Field `decision` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
                     decision: "deny".to_string(),
 
                     rule_id: first.id.clone(),
-                    /// Field `reason` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
                     reason: "scope-empty".to_string(),
                     effective_paths,
                     effective_network,
@@ -235,11 +223,9 @@ pub fn check(
     if first.safety {
         return Ok(Decision {
             schema_version: 1,
-            /// Field `decision` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             decision: "ask".to_string(),
 
             rule_id: first.id.clone(),
-            /// Field `reason` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             reason: "safety-critical".to_string(),
             effective_paths,
             effective_network,
@@ -248,10 +234,8 @@ pub fn check(
         });
     }
 
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(Decision {
         schema_version: 1,
-        /// Field `decision` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         decision: "allow".to_string(),
 
         rule_id: first.id.clone(),
@@ -291,16 +275,15 @@ fn intersect(a: &[String], b: &[String]) -> Vec<String> {
     let mut out = Vec::new();
     for y in b {
         // y is kept if any rule pattern a matches it (i.e., the rule permits y).
-        if a.iter().any(|x| glob_match(x, y) || x == y) {
-            if !out.contains(y) {
+        if a.iter().any(|x| glob_match(x, y) || x == y)
+            && !out.contains(y) {
                 out.push(y.clone());
             }
-        }
     }
     out
 }
 
-/// Specificity scoring: longer = more specific.
+/// Specificity scoring: literal > glob > bare > *. Longer = more specific.
 fn specificity(pat: &str) -> i32 {
     if pat == "*" {
         return 0;
@@ -311,12 +294,6 @@ fn specificity(pat: &str) -> i32 {
     pat.len() as i32
 }
 
-#[allow(dead_code)]
-/// fn `_hx_error_to_use_hxerror` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
-pub fn _hx_error_to_use_hxerror() -> HxError {
-    HxError::Other("".to_string())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -325,24 +302,19 @@ mod tests {
     use tempfile::TempDir;
 
     fn mk_tool(id: &str, destructive: bool) -> ToolDescriptor {
-        /// Variant `ToolDescriptor` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         ToolDescriptor {
             id: id.to_string(),
 
             schema_version: 1,
-            /// Field `version` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             version: "1.0.0".to_string(),
-            /// Field `source` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             source: "builtin".to_string(),
 
             extension_id: None,
 
             mcp_server: None,
-            /// Field `summary` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             summary: "".to_string(),
             capabilities: Capabilities {
                 read: false,
-                /// Field `write` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
                 write: !destructive,
 
                 exec: destructive,
@@ -351,26 +323,19 @@ mod tests {
                 destructive,
 
                 secrets: false,
-                /// Field `side_effect` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
                 side_effect: "exec".to_string(),
             },
-            /// Field `argument_schema_path` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             argument_schema_path: "".to_string(),
-            /// Field `return_schema_path` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             return_schema_path: "".to_string(),
-            /// Field `side_effect` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             side_effect: "exec".to_string(),
             approval: ApprovalConfig {
-                /// Field `mode` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
                 mode: "auto".to_string(),
-                /// Field `reason` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
                 reason: "".to_string(),
             },
         }
     }
 
     fn mk_rule(id: &str, effect: &str, tool: &str, paths: Vec<&str>, priority: i32) -> Rule {
-        /// Variant `Rule` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         Rule {
             id: id.to_string(),
 
@@ -385,14 +350,12 @@ mod tests {
             env: vec![],
 
             safety: false,
-            /// Field `reason` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             reason: "test".to_string(),
             priority,
         }
     }
 
     fn mk_pf(rules: Vec<Rule>) -> PermissionFile {
-        /// Variant `PermissionFile` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         PermissionFile {
             schema_version: 1,
             rules,

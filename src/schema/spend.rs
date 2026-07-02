@@ -3,34 +3,34 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+/// A single spend line recording token usage and cost.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-/// struct `SpendLine` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct SpendLine {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Schema version for forward compatibility.
     pub schema_version: u32,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// ISO-8601 timestamp of the spend event.
     pub ts: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Run that incurred this spend.
     pub run_id: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Agent that incurred this spend.
     pub agent_id: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Model used for this spend event.
     pub model_id: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Feature or operation that triggered the spend.
     pub feature: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Number of input tokens consumed.
     pub input_tokens: u64,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Number of output tokens produced.
     pub output_tokens: u64,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Number of reasoning tokens used.
     pub reasoning_tokens: u64,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Cost in USD.
     pub usd: f64,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Routing mode used to select the model.
     pub routing_mode: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Provider that served the request.
     pub provider: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Additional metadata about the spend event.
     pub metadata: Value,
     /// W5: self-authentication hash for integrity verification.
     pub self_hash: Option<String>,

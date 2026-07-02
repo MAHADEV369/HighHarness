@@ -4,16 +4,16 @@ use crate::error::HxResult;
 use clap::{Parser, Subcommand};
 use std::path::Path;
 
+/// CLI arguments for the redaction subcommand.
 #[derive(Parser, Debug)]
-/// struct `Cmd` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct Cmd {
     #[clap(subcommand)]
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// The redaction action to perform.
     pub cmd: RedactionCmd,
 }
 
+/// Available redaction actions.
 #[derive(Subcommand, Debug)]
-/// enum `RedactionCmd` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub enum RedactionCmd {
     /// Scan content for redactable secrets.
     Scan {
@@ -46,7 +46,7 @@ pub fn run(cmd: Cmd, root: &Path) -> HxResult<i32> {
             } else {
                 let mut buf = String::new();
                 std::io::Read::read_to_string(&mut std::io::stdin(), &mut buf)
-                    .map_err(|e| crate::error::HxError::Io(e))?;
+                    .map_err(crate::error::HxError::Io)?;
                 buf
             };
             let redactions = crate::redaction::Redactions::load(root)?;

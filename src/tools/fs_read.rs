@@ -10,7 +10,7 @@ use crate::schema::tool::{ToolContent, ToolMeta, ToolResult};
 
 const DEFAULT_MAX_BYTES: u64 = 1024 * 1024;
 
-/// fn `run` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Read a file as text or bytes up to the size limit.
 pub fn run(args: Value, root: &Path) -> HxResult<ToolResult> {
     let path = args
         .get("path")
@@ -40,7 +40,6 @@ pub fn run(args: Value, root: &Path) -> HxResult<ToolResult> {
     } else {
         Value::String(format!("(base64, {} bytes)", bytes.len()))
     };
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(ToolResult {
         schema_version: 1,
 
@@ -66,7 +65,7 @@ pub fn run(args: Value, root: &Path) -> HxResult<ToolResult> {
 }
 
 #[allow(dead_code)]
-/// fn `descriptor` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Return the tool descriptor for `fs.read`.
 pub fn descriptor() -> serde_json::Value {
     json!({
         "id": "fs.read",

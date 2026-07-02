@@ -16,7 +16,6 @@ pub fn request(root: &Path, req: Approval) -> HxResult<String> {
     let path = dir.join(format!("{}.json", req.id));
     let s = serde_json::to_string_pretty(&req)?;
     fs::write(&path, s)?;
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(req.id)
 }
 
@@ -25,7 +24,6 @@ pub fn state(root: &Path, id: &str) -> HxResult<String> {
     let path = approvals_dir(root).join(format!("{}.json", id));
     let raw = fs::read_to_string(&path)?;
     let v: Value = serde_json::from_str(&raw)?;
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(v.get("state")
         .and_then(|x| x.as_str())
         .unwrap_or("unknown")
@@ -55,14 +53,12 @@ pub fn resolve(
         v["modified_args"] = m;
     }
     fs::write(&path, serde_json::to_string_pretty(&v)?)?;
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(())
 }
 
 /// Expire an approval after a given duration.
 pub fn expire(root: &Path, id: &str, after_secs: u64) -> HxResult<()> {
     let _ = (root, id, after_secs);
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(())
 }
 
@@ -73,26 +69,20 @@ mod tests {
     use tempfile::TempDir;
 
     fn mk_approval(id: &str) -> Approval {
-        /// Variant `Approval` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         Approval {
             schema_version: 1,
 
             id: id.to_string(),
-            /// Field `run_id` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             run_id: "r1".to_string(),
-            /// Field `tool` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             tool: "fs.edit".to_string(),
 
             args: serde_json::json!({}),
-            /// Field `rule_id` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             rule_id: "R-ASK".to_string(),
-            /// Field `reason` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             reason: "ask".to_string(),
 
             priority: 0,
 
             destructive: false,
-            /// Field `state` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             state: "pending".to_string(),
 
             modified_args: None,

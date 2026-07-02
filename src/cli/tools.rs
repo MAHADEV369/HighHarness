@@ -9,46 +9,44 @@ use serde_json::Value;
 use crate::error::HxResult;
 use crate::tools::registry::{InvokeCtx, ScopeNarrow};
 
+/// CLI arguments for the tools subcommand.
 #[derive(Parser, Debug)]
-/// struct `Cmd` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct Cmd {
     #[clap(subcommand)]
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// The tool action to perform.
     pub cmd: ToolsSub,
 }
 
+/// Available tool actions.
 #[derive(Subcommand, Debug)]
-/// enum `ToolsSub` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub enum ToolsSub {
-    /// Variant `List` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// List all registered tools.
     List,
-    /// Variant `Invoke` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Invoke a registered tool.
     Invoke {
+        /// Tool identifier to invoke.
         #[clap(long)]
-        /// Field `tool` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         tool: String,
         /// Inline JSON object, or a path to a JSON file (detected by first non-whitespace char: '{' or '[' → inline, else path).
         #[clap(long)]
-        /// Field `args` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         args: String,
         /// Inline JSON object, or a path to a JSON file.
         #[clap(long)]
-        /// Field `scope_narrow` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         scope_narrow: Option<String>,
 
+        /// Optional run identifier for the tool call.
         #[clap(long)]
-        /// Field `run_id` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         run_id: Option<String>,
 
+        /// Optional agent identifier for the tool call.
         #[clap(long)]
-        /// Field `agent_id` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         agent_id: Option<String>,
     },
 }
 
 static TOOL_CALL_SEQ: AtomicU32 = AtomicU32::new(1);
 
-/// fn `run` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Execute the tools subcommand.
 pub fn run(cmd: Cmd, root: &Path) -> HxResult<i32> {
     match cmd.cmd {
         ToolsSub::List => {
@@ -56,7 +54,6 @@ pub fn run(cmd: Cmd, root: &Path) -> HxResult<i32> {
             for d in reg.list() {
                 println!("{}\t{}\t{}", d.id, d.side_effect, d.summary);
             }
-            /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             Ok(0)
         }
         ToolsSub::Invoke {
@@ -74,7 +71,6 @@ pub fn run(cmd: Cmd, root: &Path) -> HxResult<i32> {
             let narrow = if let Some(p) = scope_narrow {
                 let raw = crate::cli::util::read_json_or_path(&p)?;
                 let v: Value = serde_json::from_str(&raw)?;
-                /// Variant `Some` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
                 Some(ScopeNarrow {
                     paths: v.get("paths").and_then(|x| x.as_array()).map(|a| {
                         a.iter()
@@ -139,7 +135,6 @@ pub fn run(cmd: Cmd, root: &Path) -> HxResult<i32> {
                         priority: 0,
 
                         destructive: desc.capabilities.destructive,
-                        /// Field `state` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
                         state: "pending".to_string(),
 
                         modified_args: None,
@@ -169,7 +164,6 @@ pub fn run(cmd: Cmd, root: &Path) -> HxResult<i32> {
             };
             let result = reg.invoke_raw(&tool, args_value, &ctx, narrow, root)?;
             println!("{}", serde_json::to_string_pretty(&result)?);
-            /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             Ok(0)
         }
     }

@@ -8,70 +8,70 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 // --- KPI value types ---
 
+/// Raw KPI value with evidence paths.
 #[derive(Debug, Serialize)]
-/// struct `KpiValue` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct KpiValue {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Numeric KPI value.
     pub value: f64,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Unit of measurement (e.g., `rate`, `count`, `usd_per_call`).
     pub unit: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Paths to evidence files supporting this value.
     pub evidence_paths: Vec<String>,
 }
 
+/// A KPI with its computed value, target threshold, and breach status.
 #[derive(Debug, Serialize)]
-/// struct `Kpi` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct Kpi {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// KPI identifier (e.g., `merge_rate`).
     pub id: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Human-readable KPI name.
     pub name: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Computed numeric value.
     pub value: f64,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Unit of measurement.
     pub unit: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Target threshold for this KPI.
     pub target: f64,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Whether the KPI is below its target.
     pub breached: bool,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Paths to evidence files.
     pub evidence_paths: Vec<String>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Lifecycle state: `cold-start`, `partial`, or `live`.
     pub state: String,
 }
 
+/// Time window for a KPI rollup.
 #[derive(Debug, Serialize)]
-/// struct `Window` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct Window {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Window duration in days.
     pub days: u64,
 }
 
+/// Full KPI rollup containing all computed KPIs and overall status.
 #[derive(Debug, Serialize)]
-/// struct `Rollup` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct Rollup {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Schema version for artifact compatibility.
     pub schema_version: u32,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// ISO-8601 timestamp when the rollup was produced.
     pub produced_at: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Time window covered by this rollup.
     pub window: Window,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// All computed KPIs.
     pub kpis: Vec<Kpi>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Overall status: `cold-start`, `partial`, or `live`.
     pub status: String,
 }
 
+/// Alert generated when a KPI breaches its threshold or an incident is detected.
 #[derive(Debug, Serialize)]
-/// struct `Alert` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct Alert {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Alert kind (e.g., `kpi_breach_merge_rate`, `incident_count`).
     pub kind: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Severity level: `warn` or `critical`.
     pub severity: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Human-readable alert message.
     pub message: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Suggested corrective action.
     pub suggested_action: String,
 }
 
@@ -322,7 +322,7 @@ fn read_spend_files(root: &Path) -> HxResult<(f64, u64)> {
 
 // --- 11 KPI functions ---
 
-/// KPI merge_rate — Implements HARNESS_METRICS.md §1.1.
+/// Compute the merge rate KPI: fraction of changelog entries with status `added` or `modified`.
 pub fn kpi_merge_rate(root: &Path, window: &Duration) -> HxResult<KpiValue> {
     let ws = window_secs(window);
     let entries = read_changelog_entries(root);
@@ -356,7 +356,7 @@ pub fn kpi_merge_rate(root: &Path, window: &Duration) -> HxResult<KpiValue> {
     })
 }
 
-/// KPI rollback_rate — Implements HARNESS_METRICS.md §1.2.
+/// Compute the rollback rate KPI: fraction of changelog entries with status `reverted`.
 pub fn kpi_rollback_rate(root: &Path, window: &Duration) -> HxResult<KpiValue> {
     let ws = window_secs(window);
     let entries = read_changelog_entries(root);
@@ -387,7 +387,7 @@ pub fn kpi_rollback_rate(root: &Path, window: &Duration) -> HxResult<KpiValue> {
     })
 }
 
-/// KPI first_pass_rate — Implements HARNESS_METRICS.md §1.3.
+/// Compute the first-pass rate KPI: fraction of entries with `verification = "full"`.
 pub fn kpi_first_pass_rate(root: &Path, window: &Duration) -> HxResult<KpiValue> {
     let ws = window_secs(window);
     let entries = read_changelog_entries(root);
@@ -418,7 +418,7 @@ pub fn kpi_first_pass_rate(root: &Path, window: &Duration) -> HxResult<KpiValue>
     })
 }
 
-/// KPI gate_flip_rate — Implements HARNESS_METRICS.md §1.4.
+/// Compute the gate-flip rate KPI (stub: always 0 in v1).
 pub fn kpi_gate_flip_rate(root: &Path, _window: &Duration) -> HxResult<KpiValue> {
     let eps = list_episode_files(root);
     if eps.is_empty() {
@@ -436,7 +436,7 @@ pub fn kpi_gate_flip_rate(root: &Path, _window: &Duration) -> HxResult<KpiValue>
     })
 }
 
-/// KPI attribution_accuracy — Implements HARNESS_METRICS.md §1.5.
+/// Compute the attribution accuracy KPI (stub: always 1.0 in v1).
 pub fn kpi_attribution_accuracy(_root: &Path, _window: &Duration) -> HxResult<KpiValue> {
     Ok(KpiValue {
         value: 1.0,
@@ -445,7 +445,7 @@ pub fn kpi_attribution_accuracy(_root: &Path, _window: &Duration) -> HxResult<Kp
     })
 }
 
-/// KPI verification_completeness — Implements HARNESS_METRICS.md §1.6.
+/// Compute the verification completeness KPI: fraction of episodes with all required sections.
 pub fn kpi_verification_completeness(root: &Path, _window: &Duration) -> HxResult<KpiValue> {
     let eps = list_episode_files(root);
     if eps.is_empty() {
@@ -469,7 +469,7 @@ pub fn kpi_verification_completeness(root: &Path, _window: &Duration) -> HxResul
     })
 }
 
-/// KPI cpmc (cost per merged change) — Implements HARNESS_METRICS.md §1.7.
+/// Compute the cost-per-merged-change KPI: total USD divided by total API calls.
 pub fn kpi_cpmc(root: &Path, _window: &Duration) -> HxResult<KpiValue> {
     let (total_usd, total_calls) = read_spend_files(root)?;
     if total_calls == 0 {
@@ -487,7 +487,7 @@ pub fn kpi_cpmc(root: &Path, _window: &Duration) -> HxResult<KpiValue> {
     })
 }
 
-/// KPI ttm (time-to-merge) — Implements HARNESS_METRICS.md §1.8.
+/// Compute the time-to-merge KPI (stub: always 0 in v1).
 pub fn kpi_ttm(root: &Path, window: &Duration) -> HxResult<KpiValue> {
     let ws = window_secs(window);
     let entries = read_changelog_entries(root);
@@ -510,7 +510,7 @@ pub fn kpi_ttm(root: &Path, window: &Duration) -> HxResult<KpiValue> {
     })
 }
 
-/// KPI incidents — Implements HARNESS_METRICS.md §1.9.
+/// Compute the incident count KPI: number of incident JSON files.
 pub fn kpi_incidents(root: &Path, _window: &Duration) -> HxResult<KpiValue> {
     let dir = root.join(".harness").join("artifacts").join("incidents");
     if !dir.is_dir() {
@@ -536,7 +536,7 @@ pub fn kpi_incidents(root: &Path, _window: &Duration) -> HxResult<KpiValue> {
     })
 }
 
-/// KPI budget_exhaustion — Implements HARNESS_METRICS.md §1.10.
+/// Compute the budget exhaustion rate KPI: budget interventions divided by episodes.
 pub fn kpi_budget_exhaustion(root: &Path, _window: &Duration) -> HxResult<KpiValue> {
     let eps = list_episode_files(root);
     let total_eps = eps.len() as f64;
@@ -556,7 +556,7 @@ pub fn kpi_budget_exhaustion(root: &Path, _window: &Duration) -> HxResult<KpiVal
     })
 }
 
-/// KPI intervention_frequency — Implements HARNESS_METRICS.md §1.11.
+/// Compute the intervention frequency KPI: interventions divided by episodes.
 pub fn kpi_intervention_frequency(root: &Path, _window: &Duration) -> HxResult<KpiValue> {
     let eps = list_episode_files(root);
     let total_eps = eps.len() as f64;
@@ -576,7 +576,6 @@ pub fn kpi_intervention_frequency(root: &Path, _window: &Duration) -> HxResult<K
     })
 }
 
-/// KPI target values from HARNESS_METRICS.md §1.
 fn kpi_target(id: &str) -> f64 {
     match id {
         "merge_rate" => 0.80,
@@ -594,6 +593,7 @@ fn kpi_target(id: &str) -> f64 {
     }
 }
 
+#[allow(dead_code)]
 fn kpi_unit(id: &str) -> String {
     match id {
         "cpmc" => "usd_per_call".to_string(),
@@ -640,6 +640,8 @@ fn build_kpi(id: &str, val: KpiValue, has_data: bool, target: f64) -> Kpi {
     }
 }
 
+type KpiFn = fn(&Path, &Duration) -> HxResult<KpiValue>;
+
 /// Run all 11 KPI functions and compute a full rollup. Writes the result to
 /// `.harness/artifacts/metrics/<YYYY-MM>/<YYYY-MM-DD>.json`.
 ///
@@ -649,10 +651,10 @@ pub fn rollup(root: &Path, window: &Duration) -> HxResult<Rollup> {
     let days = ws / 86400;
 
     // Gather KPI values
-    let kpi_fns: Vec<(&str, fn(&Path, &Duration) -> HxResult<KpiValue>)> = vec![
+    let kpi_fns: Vec<(&str, KpiFn)> = vec![
         (
             "merge_rate",
-            kpi_merge_rate as fn(&Path, &Duration) -> HxResult<KpiValue>,
+            kpi_merge_rate as KpiFn,
         ),
         ("rollback_rate", kpi_rollback_rate),
         ("first_pass_rate", kpi_first_pass_rate),
@@ -744,7 +746,7 @@ pub fn rollup(root: &Path, window: &Duration) -> HxResult<Rollup> {
 }
 
 /// Evaluate a completed rollup and produce alerts for any breached thresholds.
-pub fn evaluate_alerts(rollup: &Rollup, root: &Path) -> Vec<Alert> {
+pub fn evaluate_alerts(rollup: &Rollup, _root: &Path) -> Vec<Alert> {
     let mut alerts = Vec::new();
 
     for kpi in &rollup.kpis {

@@ -1,0 +1,3 @@
+min_pass_evals = 1
+max_cpmc_usd = 0.0
+no_incidents_with_impact = true

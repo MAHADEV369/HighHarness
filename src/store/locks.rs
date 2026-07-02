@@ -18,9 +18,8 @@ use crate::error::{HxError, HxResult};
 
 /// A held file lock; releases on drop.
 pub struct FileLock {
-    /// Field `file` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     file: File,
-    /// Field `path` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    #[allow(dead_code)]
     path: PathBuf,
 }
 
@@ -33,6 +32,7 @@ impl FileLock {
         }
         let file = OpenOptions::new()
             .create(true)
+            .truncate(true)
             .read(true)
             .write(true)
             .open(path)?;
@@ -63,19 +63,18 @@ impl FileLock {
         }
         let file = OpenOptions::new()
             .create(true)
+            .truncate(true)
             .read(true)
             .write(true)
             .open(path)?;
         if try_flock(&file)? {
             write_pidfile(&file, path)?;
-            /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             Ok(Some(FileLock {
                 file,
 
                 path: path.to_path_buf(),
             }))
         } else {
-            /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             Ok(None)
         }
     }
@@ -92,15 +91,12 @@ fn try_flock(file: &File) -> HxResult<bool> {
     // LOCK_EX | LOCK_NB
     let result = unsafe { libc::flock(fd, libc::LOCK_EX | libc::LOCK_NB) };
     if result == 0 {
-        /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         Ok(true)
     } else {
         let err = std::io::Error::last_os_error();
         if err.kind() == ErrorKind::WouldBlock || err.raw_os_error() == Some(libc::EWOULDBLOCK) {
-            /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             Ok(false)
         } else {
-            /// Variant `Err` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             Err(err.into())
         }
     }
@@ -110,10 +106,8 @@ fn unlock_flock(file: &File) -> HxResult<()> {
     let fd = file.as_raw_fd();
     let result = unsafe { libc::flock(fd, libc::LOCK_UN) };
     if result == 0 {
-        /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         Ok(())
     } else {
-        /// Variant `Err` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         Err(std::io::Error::last_os_error().into())
     }
 }
@@ -129,7 +123,7 @@ fn write_pidfile(file: &File, path: &Path) -> HxResult<()> {
     // best-effort: we set the file contents to the pidfile
     let _ = fd;
     // Use standard write
-    let mut f2: &File = f;
+    let f2: &File = f;
     // rewind via read+seek not necessary; just write
     let _ = f2;
     let mut opts = OpenOptions::new();
@@ -138,13 +132,11 @@ fn write_pidfile(file: &File, path: &Path) -> HxResult<()> {
     dup.write_all(s.as_bytes())?;
     // Re-acquire lock on the dup descriptor (file path lock follows the inode,
     // not the fd). For flock semantics the original lock is still held.
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(())
 }
 
 /// Read the pidfile content for a lock path. Returns `(pid, ts, agent)` if parseable.
 #[allow(dead_code)]
-/// fn `read_pidfile` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub fn read_pidfile(path: &Path) -> HxResult<(u32, String, String)> {
     let mut s = String::new();
     File::open(path)?.read_to_string(&mut s)?;
@@ -152,13 +144,11 @@ pub fn read_pidfile(path: &Path) -> HxResult<(u32, String, String)> {
     let pid = it.next().and_then(|x| x.parse::<u32>().ok()).unwrap_or(0);
     let ts = it.next().unwrap_or("").to_string();
     let by = it.next().unwrap_or("").to_string();
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok((pid, ts, by))
 }
 
 /// Return true if the pid in a pidfile at `path` is still alive on the host.
 #[allow(dead_code)]
-/// fn `pid_alive` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub fn pid_alive(pid: u32) -> bool {
     if pid == 0 {
         return false;

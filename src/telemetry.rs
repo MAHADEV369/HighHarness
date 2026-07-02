@@ -9,9 +9,9 @@ use sha2::{Digest, Sha256};
 
 use crate::error::{HxError, HxResult};
 use crate::schema::integrity::IntegrityLine;
-use crate::store::integrity_log_path;
 
-/// mod `integrity` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+
+/// Append-only integrity log with SHA-256 chain verification.
 pub mod integrity {
     use super::*;
 
@@ -57,7 +57,6 @@ pub mod integrity {
             .open(&path)?;
         writeln!(f, "{}", final_body)?;
         f.sync_data()?;
-        /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         Ok(this_hash)
     }
 
@@ -95,7 +94,6 @@ pub mod integrity {
             }
             prev = v.this_hash;
         }
-        /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         Ok(broken)
     }
 
@@ -106,11 +104,9 @@ pub mod integrity {
         let raw = fs::read_to_string(path)?;
         let last = raw
             .lines()
-            .filter(|l| !l.trim().is_empty())
-            .last()
+            .rfind(|l| !l.trim().is_empty())
             .ok_or_else(|| HxError::Other("empty log".to_string()))?;
         let v: IntegrityLine = serde_json::from_str(last)?;
-        /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         Ok(v.this_hash)
     }
 

@@ -19,7 +19,7 @@ use crate::store::{changelog_lock_path, changelog_path};
 pub fn append(entry: &mut Entry, root: &Path) -> HxResult<String> {
     let lock_path = changelog_lock_path(root);
     let cpath = changelog_path(root);
-    let lock = FileLock::acquire(&lock_path, 5000)?;
+    let _lock = FileLock::acquire(&lock_path, 5000)?;
 
     // First pass: read latest under lock.
     let prev_hash = read_latest_or_genesis_hash_under_lock(&cpath)?;
@@ -67,7 +67,6 @@ pub fn append(entry: &mut Entry, root: &Path) -> HxResult<String> {
             this_hash, written_hash
         )));
     }
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(this_hash)
 }
 
@@ -80,7 +79,6 @@ pub fn latest(root: &Path) -> HxResult<Entry> {
     if let Some(e) = entries.last() {
         return Ok(e.clone());
     }
-    /// Variant `Err` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Err(HxError::NotBootstrapped)
 }
 
@@ -97,7 +95,6 @@ pub fn latest_or_genesis(root: &Path) -> HxResult<String> {
     if let Some(g) = parse_genesis_hash(&txt) {
         return Ok(g);
     }
-    /// Variant `Err` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Err(HxError::NotBootstrapped)
 }
 
@@ -108,7 +105,6 @@ pub fn verify_chain(root: &Path, _tail: Option<usize>) -> HxResult<Vec<usize>> {
     let txt = fs::read_to_string(&cpath).unwrap_or_default();
     let entries = parse_all_entries(&txt);
     let mut prev = match parse_genesis_hash(&txt) {
-        /// Variant `Some` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         Some(h) => h,
         None => return Ok(Vec::new()), // no chain to verify
     };
@@ -123,7 +119,6 @@ pub fn verify_chain(root: &Path, _tail: Option<usize>) -> HxResult<Vec<usize>> {
         }
         prev = e.this_hash.clone();
     }
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(broken)
 }
 
@@ -136,7 +131,6 @@ pub fn get(n: u64, root: &Path) -> HxResult<Entry> {
             return Ok(e);
         }
     }
-    /// Variant `Err` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Err(HxError::Other(format!("entry {} not found", n)))
 }
 
@@ -151,7 +145,6 @@ fn read_latest_or_genesis_hash_under_lock(path: &Path) -> HxResult<String> {
         }
         return Ok(g);
     }
-    /// Variant `Err` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Err(HxError::NotBootstrapped)
 }
 
@@ -165,7 +158,6 @@ fn append_bytes(path: &Path, bytes: &[u8]) -> HxResult<()> {
         .open(path)?;
     f.write_all(bytes)?;
     f.sync_data()?;
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(())
 }
 
@@ -179,7 +171,6 @@ fn read_block_hash(path: &Path, prev_hash: &str) -> HxResult<String> {
             return Ok(e.this_hash);
         }
     }
-    /// Variant `Err` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Err(HxError::Other(format!(
         "no entry with prev_hash {} found after write",
         prev_hash
@@ -328,7 +319,6 @@ fn parse_entry_block(lines: &[String]) -> Option<Entry> {
         .filter(|s| !s.is_empty())
         .collect();
 
-    /// Variant `Some` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Some(Entry {
         n,
 
@@ -388,30 +378,22 @@ mod tests {
     }
 
     fn make_entry(n: u64, intent: &str) -> Entry {
-        /// Variant `Entry` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         Entry {
             n,
 
             ts: id::now_iso(),
-            /// Field `agent` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             agent: "test-agent".to_string(),
 
             run_id: id::run_id("test", "tst"),
-            /// Field `tier` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             tier: "trivial".to_string(),
 
             files: vec!["a.txt".to_string()],
 
             intent: intent.to_string(),
-            /// Field `diff_summary` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             diff_summary: "n/a".to_string(),
-            /// Field `evidence` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             evidence: "n/a".to_string(),
-            /// Field `attribution` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             attribution: "none".to_string(),
-            /// Field `verification` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             verification: "syntactic".to_string(),
-            /// Field `status` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             status: "added".to_string(),
 
             prev_hash: String::new(),

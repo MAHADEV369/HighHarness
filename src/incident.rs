@@ -1,11 +1,12 @@
 //! Incident response automation per HARNESS_SECURITY.md §9.
 
-use crate::error::{HxError, HxResult};
+use crate::error::HxResult;
 use std::fs;
 use std::path::Path;
 
 /// Declare a new incident. Creates incident JSON and optionally a notification file.
 /// Returns the incident id.
+#[allow(clippy::too_many_arguments)]
 pub fn declare(
     root: &Path,
     detection_rule: &str,
@@ -105,7 +106,7 @@ pub fn acknowledge(root: &Path, id: &str, by: &str) -> HxResult<()> {
         .join("artifacts")
         .join("incidents")
         .join(format!("{}.json", id));
-    let mut raw = fs::read_to_string(&path)?;
+    let raw = fs::read_to_string(&path)?;
     let mut v: serde_json::Value = serde_json::from_str(&raw)?;
     v["status"] = serde_json::json!("acknowledged");
     v["acknowledged_by"] = serde_json::json!(by);
@@ -121,7 +122,7 @@ pub fn close(root: &Path, id: &str, postmortem: &str) -> HxResult<()> {
         .join("artifacts")
         .join("incidents")
         .join(format!("{}.json", id));
-    let mut raw = fs::read_to_string(&path)?;
+    let raw = fs::read_to_string(&path)?;
     let mut v: serde_json::Value = serde_json::from_str(&raw)?;
     v["status"] = serde_json::json!("closed");
     v["closed_at"] = serde_json::json!(crate::id::now_iso());

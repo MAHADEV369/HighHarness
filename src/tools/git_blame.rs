@@ -8,7 +8,7 @@ use serde_json::{json, Value};
 use crate::error::{HxError, HxResult};
 use crate::schema::tool::{ToolContent, ToolMeta, ToolResult};
 
-/// fn `run` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Run `git blame` on a file, optionally for a line range.
 pub fn run(args: Value, root: &Path) -> HxResult<ToolResult> {
     let path = args
         .get("path")
@@ -27,13 +27,11 @@ pub fn run(args: Value, root: &Path) -> HxResult<ToolResult> {
         .map_err(|e| HxError::Other(format!("git.blame spawn: {}", e)))?;
     let stdout = String::from_utf8_lossy(&out.stdout).to_string();
     let exit = out.status.code().unwrap_or(-1);
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(ToolResult {
         schema_version: 1,
 
         ok: out.status.success(),
         content: ToolContent {
-            /// Field `kind` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             kind: "text".to_string(),
 
             value: Value::String(stdout),
@@ -55,7 +53,7 @@ pub fn run(args: Value, root: &Path) -> HxResult<ToolResult> {
 }
 
 #[allow(dead_code)]
-/// fn `descriptor` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Return the tool descriptor for `git.blame`.
 pub fn descriptor() -> serde_json::Value {
     json!({
         "id": "git.blame",

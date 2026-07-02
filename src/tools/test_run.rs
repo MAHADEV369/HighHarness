@@ -5,11 +5,11 @@ use std::path::Path;
 
 use serde_json::{json, Value};
 
-use crate::error::{HxError, HxResult};
-use crate::schema::tool::{ToolContent, ToolMeta, ToolResult};
+use crate::error::HxResult;
+use crate::schema::tool::{ToolMeta, ToolResult};
 use crate::store::config_path;
 
-/// fn `run` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Execute the configured test command via `shell.exec`.
 pub fn run(args: Value, root: &Path) -> HxResult<ToolResult> {
     let phase = args
         .get("phase")
@@ -24,7 +24,6 @@ pub fn run(args: Value, root: &Path) -> HxResult<ToolResult> {
         .to_string();
     let _ = phase;
     let result = super::shell_exec::run(json!({"cmd": cmd, "timeout_ms": 60_000}), root)?;
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(ToolResult {
         schema_version: 1,
 
@@ -57,7 +56,7 @@ fn read_config(root: &Path) -> Option<Value> {
 }
 
 #[allow(dead_code)]
-/// fn `descriptor` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Return the tool descriptor for `test.run`.
 pub fn descriptor() -> serde_json::Value {
     json!({
         "id": "test.run",

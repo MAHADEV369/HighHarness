@@ -3,19 +3,19 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+/// A security or integrity incident record.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-/// struct `Incident` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct Incident {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Schema version for forward compatibility.
     pub schema_version: u32,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Unique identifier for this incident.
     pub id: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Type of incident: "policy_violation", "integrity_failure", etc.
     pub kind: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// ISO-8601 timestamp when the incident was detected.
     pub at: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Run associated with the incident, if any.
     pub run_id: Option<String>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Detailed information about the incident.
     pub details: Value,
 }

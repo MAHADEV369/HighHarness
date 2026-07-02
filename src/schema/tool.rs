@@ -3,127 +3,125 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+/// Describes a tool that can be invoked by an agent.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-/// struct `ToolDescriptor` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct ToolDescriptor {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Unique tool identifier.
     pub id: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Schema version for forward compatibility.
     pub schema_version: u32,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Tool version string.
     pub version: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Source of the tool: "builtin", "extension", "mcp", etc.
     pub source: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Extension identifier if the tool comes from an extension.
     pub extension_id: Option<String>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// MCP server name if the tool is an MCP tool.
     pub mcp_server: Option<String>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Short human-readable description of the tool.
     pub summary: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Capabilities this tool requires.
     pub capabilities: Capabilities,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Path to the JSON schema for tool arguments.
     pub argument_schema_path: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Path to the JSON schema for tool return value.
     pub return_schema_path: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Side-effect classification: "none", "read-only", "write", "destructive".
     pub side_effect: String,
+    /// Approval configuration for this tool.
     #[serde(default = "default_approval")]
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     pub approval: ApprovalConfig,
 }
 
+/// Returns the default approval configuration (auto mode).
 fn default_approval() -> ApprovalConfig {
-    /// Variant `ApprovalConfig` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     ApprovalConfig {
-        /// Field `mode` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         mode: "auto".to_string(),
 
         reason: String::new(),
     }
 }
 
+/// Capability flags for a tool.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-/// struct `Capabilities` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct Capabilities {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Tool can read files.
     pub read: bool,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Tool can write files.
     pub write: bool,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Tool can execute commands.
     pub exec: bool,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Tool can access the network.
     pub network: bool,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Tool can perform destructive operations.
     pub destructive: bool,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Tool can access secrets.
     pub secrets: bool,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Side-effect classification.
     pub side_effect: String,
 }
 
+/// Approval configuration for a tool.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-/// struct `ApprovalConfig` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct ApprovalConfig {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Approval mode: "auto", "always", or "never".
     pub mode: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Reason why approval is required.
     pub reason: String,
 }
 
+/// The result returned by a tool execution.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-/// struct `ToolResult` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct ToolResult {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Schema version for forward compatibility.
     pub schema_version: u32,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Whether the tool call succeeded.
     pub ok: bool,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Content of the tool result.
     pub content: ToolContent,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Execution metadata.
     pub meta: ToolMeta,
+    /// Redactions applied to the result content.
     #[serde(default)]
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     pub redactions: Vec<Redaction>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Approval request ID, if approval was involved.
     pub approval_id: Option<String>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Identifier of the tool call this result corresponds to.
     pub tool_call_id: String,
 }
 
+/// Content payload returned by a tool.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-/// struct `ToolContent` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct ToolContent {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Content type: "text", "json", "file", etc.
     pub kind: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// The content value.
     pub value: Value,
 }
 
+/// Execution metadata for a tool call.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-/// struct `ToolMeta` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct ToolMeta {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Duration of the tool call in milliseconds.
     pub duration_ms: u64,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Bytes transferred or processed, if applicable.
     pub bytes: Option<u64>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Exit code for command executions, if applicable.
     pub exit_code: Option<i32>,
 }
 
+/// A redaction applied to tool result content.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-/// struct `Redaction` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct Redaction {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Byte range [start, end) that was redacted.
     pub range: [usize; 2],
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Reason for the redaction.
     pub reason: String,
 }
 
+/// Returns a default `Capabilities` with all flags set to false.
 #[allow(dead_code)]
-/// fn `default_capabilities` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub fn default_capabilities() -> Capabilities {
-    /// Variant `Capabilities` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Capabilities {
         read: false,
 
@@ -136,7 +134,6 @@ pub fn default_capabilities() -> Capabilities {
         destructive: false,
 
         secrets: false,
-        /// Field `side_effect` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         side_effect: "none".to_string(),
     }
 }

@@ -3,25 +3,25 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+/// A bootstrap record created during initial harness setup.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-/// struct `Bootstrap` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct Bootstrap {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Schema version for forward compatibility.
     pub schema_version: u32,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// ISO-8601 timestamp of the bootstrap run.
     pub bootstrapped_at: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Human operator who triggered the bootstrap.
     pub bootstrap_human: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Git commit that was bootstrapped.
     pub bootstrap_commit: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Spec versions recorded at bootstrap time.
     pub spec_versions: Value,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Genesis hash of the integrity chain.
     pub genesis_hash: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Evaluation results from the bootstrap.
     pub eval: Value,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Hash of the initial integrity log seed.
     pub integrity_log_seed_hash: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Whether the bootstrap passed all checks.
     pub passed: bool,
 }

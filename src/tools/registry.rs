@@ -14,35 +14,35 @@ use crate::schema::tool::{ToolDescriptor, ToolMeta, ToolResult};
 use crate::store::tool_calls_path;
 use crate::tools;
 
+/// Context for a single tool invocation.
 #[derive(Debug, Clone, Serialize)]
-/// struct `InvokeCtx` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct InvokeCtx {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Unique identifier for the current run.
     pub run_id: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Identifier of the agent making the call.
     pub agent_id: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Unique identifier for this tool call.
     pub tool_call_id: String,
 }
 
+/// Scope restrictions applied to a tool invocation.
 #[derive(Debug, Clone, Serialize)]
-/// struct `ScopeNarrow` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct ScopeNarrow {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Allowed file path globs.
     pub paths: Option<Vec<String>>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Allowed network targets.
     pub network: Option<Vec<String>>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Allowed environment variables.
     pub env: Option<Vec<String>>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Maximum number of tool calls before expiry.
     pub ttl_tool_calls: Option<u32>,
 }
 
-/// struct `Registry` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Registry of available tools loaded from disk.
 pub struct Registry {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Map of tool ID to tool descriptor.
     pub tools: HashMap<String, ToolDescriptor>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Optional redaction vault for sensitive content.
     pub redactions: Option<Redactions>,
 }
 
@@ -63,9 +63,7 @@ impl Registry {
             }
             let raw = fs::read_to_string(&p)?;
             let d: ToolDescriptor = match toml::from_str(&raw) {
-                /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
                 Ok(d) => d,
-                /// Variant `Err` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
                 Err(e) => {
                     return Err(HxError::SchemaRejected {
                         artifact: format!("tools/{}", p.display()),
@@ -83,16 +81,15 @@ impl Registry {
             }
             tools.insert(d.id.clone(), d);
         }
-        /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         Ok(Registry { tools, redactions })
     }
 
-    /// fn `get` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Look up a tool descriptor by ID.
     pub fn get(&self, id: &str) -> Option<&ToolDescriptor> {
         self.tools.get(id)
     }
 
-    /// fn `list` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// List all registered tool descriptors sorted by ID.
     pub fn list(&self) -> Vec<&ToolDescriptor> {
         let mut v: Vec<&ToolDescriptor> = self.tools.values().collect();
         v.sort_by(|a, b| a.id.cmp(&b.id));
@@ -219,7 +216,6 @@ impl Registry {
         line.as_object_mut()
             .map(|o| o.insert("self_hash".to_string(), serde_json::json!(self_hash)));
         writeln!(f, "{}", serde_json::to_string(&line)?)?;
-        /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         Ok(result)
     }
 }

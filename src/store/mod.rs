@@ -4,23 +4,23 @@
 //! (write-to-temp + rename). All shared writers take the lock documented
 //! in `HARNESS_PRIMITIVES.md` §4.3.
 
-/// mod `approvals` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Approval request storage.
 pub mod approvals;
-/// mod `changelog` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Changelog compare-and-append primitive and chain verification.
 pub mod changelog;
-/// mod `episode` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Episode trace persistence and lifecycle.
 pub mod episode;
-/// mod `in_flight` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// In-flight run tracking (open/close/reap).
 pub mod in_flight;
-/// mod `interventions` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Intervention record storage.
 pub mod interventions;
-/// mod `locks` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// File-based advisory locks (POSIX flock).
 pub mod locks;
-/// mod `memory` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Project memory JSONL store.
 pub mod memory;
-/// mod `snapshots` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Git snapshot storage and diffing.
 pub mod snapshots;
-/// mod `spend` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Spend ledger for API cost tracking.
 pub mod spend;
 
 use std::path::{Path, PathBuf};
@@ -164,6 +164,5 @@ pub fn ensure_skeleton(root: &Path) -> crate::error::HxResult<()> {
     ] {
         fs::create_dir_all(&d)?;
     }
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(())
 }

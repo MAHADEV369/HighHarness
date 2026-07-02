@@ -1,82 +1,82 @@
 //! OpenAI-chat-completions-compatible provider adapter per HARNESS_PRIMITIVES.md §6.
 
-use crate::error::{HxError, HxResult};
+use crate::error::HxResult;
 use crate::redaction::Redactions;
 use serde::Serialize;
 use std::path::Path;
 
-/// struct `CompleteRequest` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// A chat completion request in OpenAI-compatible format.
 #[derive(Debug, Serialize)]
 pub struct CompleteRequest {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Model ID to use for completion.
     pub model_id: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Conversation messages.
     pub messages: Vec<Message>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Optional tool definitions.
     pub tools: Option<Vec<serde_json::Value>>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Optional system prompt.
     pub system: Option<String>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Maximum tokens to generate.
     pub max_tokens: Option<u32>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Sampling temperature.
     pub temperature: Option<f32>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Reasoning effort level ("low", "medium", "high").
     pub reasoning_effort: Option<String>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Optional prefill text to continue from.
     pub prefill: Option<String>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Whether to stream the response.
     pub stream: bool,
 }
 
-/// struct `Message` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// A single message in a conversation.
 #[derive(Debug, Serialize)]
 pub struct Message {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Message role ("system", "user", "assistant").
     pub role: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Message content text.
     pub content: String,
 }
 
-/// struct `ModelEvent` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// An event emitted during model response streaming.
 #[derive(Debug, Serialize)]
 pub struct ModelEvent {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Event kind ("text", "tool_call", "usage", "error", etc.).
     pub kind: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Incremental text delta for streaming.
     pub delta: Option<String>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Tool call data if the model requests a tool invocation.
     pub tool_call: Option<serde_json::Value>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Token usage information.
     pub usage: Option<Usage>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Cost information in USD.
     pub cost: Option<Cost>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Reason the model finished generating.
     pub finish_reason: Option<String>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Error message if the event represents an error.
     pub error: Option<String>,
 }
 
-/// struct `Usage` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Token usage statistics for a completion.
 #[derive(Debug, Serialize)]
 pub struct Usage {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Number of input tokens consumed.
     pub input_tokens: u32,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Number of output tokens generated.
     pub output_tokens: u32,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Number of reasoning tokens used (chain-of-thought).
     pub reasoning_tokens: Option<u32>,
 }
 
-/// struct `Cost` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Cost information for a completion.
 #[derive(Debug, Serialize)]
 pub struct Cost {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Cost in US dollars.
     pub usd: f64,
 }
 
-/// fn `complete` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Send a completion request to the model provider (stub implementation).
 pub fn complete(
-    req: &CompleteRequest,
+    _req: &CompleteRequest,
     redactions: &Redactions,
     root: &Path,
 ) -> HxResult<Vec<ModelEvent>> {

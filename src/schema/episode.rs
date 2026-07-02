@@ -3,95 +3,95 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+/// A complete trace of one agent episode (task execution).
 #[derive(Clone, Debug, Serialize, Deserialize)]
-/// struct `Episode` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct Episode {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Run that produced this episode.
     pub run_id: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Original task specification.
     pub task_spec: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Plan generated for the task.
     pub plan: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Log of task state transitions.
     pub task_state_log: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// All tool calls made during this episode.
     pub tool_calls: Vec<ToolCall>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Decisions made by the agent.
     pub decisions: Vec<Decision>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Failures encountered during execution.
     pub failures: Vec<Failure>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Interventions applied during execution.
     pub interventions: Vec<Intervention>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Pre-task checklist status.
     pub pre_task_checklist: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Verification report produced at the end.
     pub verification_report: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Files touched by this episode.
     pub files_touched: Vec<String>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Hash of this episode for integrity verification.
     pub episode_hash: String,
 }
 
+/// A single tool invocation within an episode.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-/// struct `ToolCall` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct ToolCall {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Unique identifier for this tool call.
     pub tool_call_id: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Name of the tool that was called.
     pub tool: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Arguments passed to the tool.
     pub args: Value,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Summary of the tool call result.
     pub result_summary: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// ISO-8601 timestamp when the call started.
     pub started_at: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Duration of the call in milliseconds.
     pub duration_ms: u64,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Approval request ID if approval was required.
     pub approval_id: Option<String>,
 }
 
+/// A decision made by the agent during episode execution.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-/// struct `Decision` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct Decision {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Unique identifier for this decision.
     pub decision_id: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// The choice that was made.
     pub choice: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Alternative choices that were considered.
     pub alternatives: Vec<String>,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Reasoning behind the chosen option.
     pub reason: String,
 }
 
+/// A failure encountered during episode execution.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-/// struct `Failure` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct Failure {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Unique identifier for this failure.
     pub failure_id: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Description of what failed.
     pub what: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Where the failure occurred.
     pub locus: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Evidence of the failure.
     pub evidence: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// How the failure was resolved or mitigated.
     pub resolution: String,
 }
 
+/// An external intervention applied during episode execution.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-/// struct `Intervention` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct Intervention {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Unique identifier for this intervention.
     pub intervention_id: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Type of intervention applied.
     pub kind: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Description of what the intervention did.
     pub what: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Context that prompted the intervention.
     pub context: Value,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Correction applied by the intervention.
     pub correction: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Agent or operator who applied the intervention.
     pub by: String,
 }

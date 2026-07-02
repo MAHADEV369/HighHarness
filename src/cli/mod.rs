@@ -2,45 +2,45 @@
 //!
 //! Subcommands map 1:1 to the harness surface in `BUILD_PHASE_1.md`.
 
-/// mod `bootstrap` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Bootstrap initialisation and verification subcommand.
 pub mod bootstrap;
-/// mod `cadence` — Implements HARNESS_METRICS.md §6 (review cadence).
+/// Metrics cadence rollup subcommand.
 pub mod cadence;
-/// mod `changelog` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Append-only changelog subcommand.
 pub mod changelog;
-/// mod `clarification` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Clarification request subcommand (stub).
 pub mod clarification;
-/// mod `episode` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Episode recording subcommand.
 pub mod episode;
-/// mod `eval` — Implements HARNESS_ENGINEERING.md / HARNESS_PRIMITIVES.md.
+/// Eval listing and execution subcommand.
 pub mod eval;
-/// mod `gates` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Gate evaluation subcommand.
 pub mod gates;
-/// mod `hooks` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Pre-tool / post-tool / session-start hooks subcommand.
 pub mod hooks;
-/// mod `id_cmd` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// ID generation subcommands (id-run, id-agent).
 pub mod id_cmd;
-/// mod `incident` — Implements HARNESS_SECURITY.md §9 (incident response).
+/// Incident lifecycle subcommand.
 pub mod incident;
-/// mod `integrity` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Integrity log verification and append subcommand.
 pub mod integrity;
-/// mod `mcp` — MCP server management (Workstream 7).
+/// MCP server integration subcommand.
 pub mod mcp;
-/// mod `metrics` — Implements HARNESS_METRICS.md §1-§4.
+/// Metrics rollup and alerts subcommand.
 pub mod metrics;
-/// mod `models` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Model catalogue subcommand.
 pub mod models;
-/// mod `permissions` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Permissions listing and checking subcommand.
 pub mod permissions;
-/// mod `redaction` — Implements HARNESS_SECURITY.md §5 (redaction vault).
+/// Redaction scanning and pattern management subcommand.
 pub mod redaction;
-/// mod `snapshot` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Snapshot creation, diffing, and revert subcommand.
 pub mod snapshot;
-/// mod `spend` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Spend tracking subcommand.
 pub mod spend;
-/// mod `tools` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Tool registry listing and invocation subcommand.
 pub mod tools;
-/// mod `util` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// CLI utility helpers (JSON-or-path reading).
 pub mod util;
 
 use std::path::PathBuf;
@@ -51,62 +51,60 @@ use clap::{Parser, Subcommand};
 /// Top-level CLI dispatcher.
 #[derive(Parser, Debug)]
 #[clap(name = "HighHarness", about = "Runtime-neutral agent harness.", version = env!("CARGO_PKG_VERSION"))]
-/// struct `Cli` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct Cli {
     /// Working directory (defaults to current).
     #[clap(long, global = true, default_value = ".")]
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     pub root: PathBuf,
 
+    /// The subcommand to execute.
     #[clap(subcommand)]
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     pub cmd: Cmd,
 }
 
+/// Top-level subcommand dispatcher.
 #[derive(Subcommand, Debug)]
-/// enum `Cmd` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub enum Cmd {
-    /// Variant `Bootstrap` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Bootstrap initialisation or verification.
     Bootstrap(bootstrap::Cmd),
-    /// Variant `Changelog` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Append or inspect the changelog.
     Changelog(changelog::Cmd),
-    /// Variant `Episode` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Open, append, close, or hash an episode.
     Episode(episode::Cmd),
-    /// Variant `Snapshot` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Create, diff, or revert file snapshots.
     Snapshot(snapshot::Cmd),
-    /// Variant `Gates` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Run a gate check.
     Gates(gates::Cmd),
-    /// Variant `Tools` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// List or invoke registered tools.
     Tools(tools::Cmd),
-    /// Variant `Permissions` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// List or check permission rules.
     Permissions(permissions::Cmd),
-    /// Variant `Spend` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Append or summarise spend lines.
     Spend(spend::Cmd),
-    /// Variant `Hook` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Execute a lifecycle hook.
     Hook(hooks::Cmd),
-    /// Variant `Integrity` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Verify or append to the integrity log.
     Integrity(integrity::Cmd),
-    /// Variant `Clarification` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// List or resolve clarification requests.
     Clarification(clarification::Cmd),
-    /// Variant `Eval` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// List or run evals.
     Eval(eval::Cmd),
     /// ID helpers (Phase 2 thin CLI wrappers).
     #[clap(name = "id-run")]
     IdRun(id_cmd::IdRunCmd),
-    /// Variant `IdAgent` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// ID helpers (Phase 2 thin CLI wrappers).
     #[clap(name = "id-agent")]
     IdAgent(id_cmd::IdAgentCmd),
-    /// Variant `Metrics` — Implements HARNESS_METRICS.md §1-§4.
+    /// Roll up metrics or check alerts.
     Metrics(metrics::Cmd),
-    /// Variant `Cadence` — Implements HARNESS_METRICS.md §6.
+    /// Run a cadence rollup check.
     Cadence(cadence::Cmd),
-    /// Variant `Redaction` — Implements HARNESS_SECURITY.md §5.
+    /// Scan content or manage redaction patterns.
     Redaction(redaction::Cmd),
-    /// Variant `Incident` — Implements HARNESS_SECURITY.md §9.
+    /// Declare, list, acknowledge, or close incidents.
     Incident(incident::Cmd),
-    /// Variant `Models` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// List or inspect registered models.
     Models(models::Cmd),
-    /// Variant `Mcp` — MCP server management (Workstream 7).
+    /// Start or query the MCP server.
     Mcp(mcp::Cmd),
 }
 

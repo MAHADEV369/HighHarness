@@ -1,9 +1,12 @@
 //! Verification gate runner, per `HARNESS_PRIMITIVES.md` §7.
 
 use std::fs;
+use std::os::unix::process::ExitStatusExt;
 use std::path::Path;
 use std::process::Command;
-use std::time::Instant;
+use std::time::{Duration, Instant};
+
+use tokio::runtime::Runtime;
 
 use serde::Serialize;
 use serde_json::Value;
@@ -12,28 +15,28 @@ use toml::Value as TomlValue;
 use crate::error::{HxError, HxResult};
 use crate::store::{artifacts_dir, config_path};
 
+/// Result of a single gate execution.
 #[derive(Debug, Clone, Serialize)]
-/// struct `GateResult` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
 pub struct GateResult {
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Schema version for artifact compatibility.
     pub schema_version: u32,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Phase this gate belongs to (e.g., `highharness`).
     pub phase: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Gate name (e.g., `syntactic`, `functional`, `semantic`).
     pub gate: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Outcome status: `pass`, `fail`, or `blocked`.
     pub status: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Shell command that was executed.
     pub command: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Process exit code.
     pub exit_code: i32,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Whether output was truncated to 32 KB.
     pub output_truncated: bool,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Wall-clock duration in milliseconds.
     pub duration_ms: u64,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Path to the evidence log file.
     pub evidence_path: String,
-    /// item `?` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    /// Optional reason for non-pass status.
     pub reason: Option<String>,
 }
 
@@ -62,18 +65,37 @@ pub fn run(
     let evidence_path = evidence_dir.join(format!("gate-{}-{}.log", phase, gate));
     let evidence_path_str = evidence_path.display().to_string();
 
-    // Run the command.
-    let child = Command::new("sh")
-        .arg("-c")
-        .arg(&cmd)
-        .current_dir(root)
-        .env("CHANGED", changes.to_string())
-        .output();
-    let (status, stdout, stderr, blocked) = match child {
-        /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
-        Ok(out) => (out.status, out.stdout, out.stderr, false),
-        /// Variant `Err` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
-        Err(_) => {
+    // Run the command with timeout enforcement.
+    let timeout_duration = Duration::from_secs(timeout_s);
+    let rt = Runtime::new()
+        .map_err(|e| HxError::Other(format!("failed to create tokio runtime: {}", e)))?;
+    let child_result = rt.block_on(async {
+        let mut tokio_cmd = tokio::process::Command::new("sh");
+        tokio_cmd
+            .arg("-c")
+            .arg(&cmd)
+            .current_dir(root)
+            .env("CHANGED", changes.to_string());
+        match tokio::time::timeout(timeout_duration, tokio_cmd.output()).await {
+            Ok(result) => result.map(|out| {
+                (
+                    std::process::ExitStatus::from_raw(out.status.code().unwrap_or(-1)),
+                    out.stdout,
+                    out.stderr,
+                )
+            }),
+            Err(_elapsed) => {
+                // Timeout expired — kill the process.
+                Err(std::io::Error::new(
+                    std::io::ErrorKind::TimedOut,
+                    format!("gate command timed out after {}s: {}", timeout_s, cmd),
+                ))
+            }
+        }
+    });
+    let (status, stdout, stderr, blocked) = match child_result {
+        Ok((st, out, err)) => (st, out, err, false),
+        Err(_e) => {
             // Couldn't spawn — treat as a `blocked` gate (e.g., missing command).
             // Per spec, if the functional gate "no tests" signal triggers, we
             // would substitute a smoke check. We attempt a smoke check.
@@ -84,7 +106,6 @@ pub fn run(
                 .current_dir(root)
                 .output();
             match out {
-                /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
                 Ok(o) => {
                     let combined = format!(
                         "smoke-fallback (original failed to spawn):\nstdout: {}\nstderr: {}\n",
@@ -118,7 +139,6 @@ pub fn run(
                         ),
                     });
                 }
-                /// Variant `Err` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
                 Err(_) => {
                     let body = "gate failed to spawn and smoke fallback also failed".to_string();
                     fs::write(&evidence_path, &body)?;
@@ -128,11 +148,9 @@ pub fn run(
                         phase: phase.to_string(),
 
                         gate: gate.to_string(),
-                        /// Field `status` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
                         status: "blocked".to_string(),
 
                         command: cmd,
-                        /// Field `exit_code` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
                         exit_code: -1,
 
                         output_truncated: false,
@@ -159,7 +177,6 @@ pub fn run(
     let _ = timeout_s;
     let duration = started.elapsed().as_millis() as u64;
     let gate_status = if status.success() { "pass" } else { "fail" };
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(GateResult {
         schema_version: 1,
 
@@ -189,7 +206,6 @@ fn read_config(root: &Path) -> HxResult<TomlValue> {
     }
     let raw = fs::read_to_string(&p)?;
     let v: TomlValue = toml::from_str(&raw)?;
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(v)
 }
 
@@ -306,11 +322,8 @@ pub fn run_semantic(
             schema_version: 1,
 
             phase: phase.to_string(),
-            /// Field `gate` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             gate: "semantic".to_string(),
-            /// Field `status` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             status: "fail".to_string(),
-            /// Field `command` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             command: "semantic-verification-parse".to_string(),
 
             exit_code: 1,
@@ -342,11 +355,8 @@ pub fn run_semantic(
                 schema_version: 1,
 
                 phase: phase.to_string(),
-                /// Field `gate` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
                 gate: "semantic".to_string(),
-                /// Field `status` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
                 status: "fail".to_string(),
-                /// Field `command` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
                 command: "semantic-verification-parse".to_string(),
 
                 exit_code: 1,
@@ -406,11 +416,8 @@ pub fn run_semantic(
                 schema_version: 1,
 
                 phase: phase.to_string(),
-                /// Field `gate` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
                 gate: "semantic".to_string(),
-                /// Field `status` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
                 status: "fail".to_string(),
-                /// Field `command` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
                 command: "semantic-verification-parse".to_string(),
 
                 exit_code: 1,
@@ -451,11 +458,8 @@ pub fn run_semantic(
                 schema_version: 1,
 
                 phase: phase.to_string(),
-                /// Field `gate` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
                 gate: "semantic".to_string(),
-                /// Field `status` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
                 status: "fail".to_string(),
-                /// Field `command` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
                 command: "semantic-verification-parse".to_string(),
 
                 exit_code: 1,
@@ -475,16 +479,12 @@ pub fn run_semantic(
 
     body.push_str("orthogonality check: PASS (no overlap with functional-gate log)\n");
     fs::write(&evidence_path, &body)?;
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(GateResult {
         schema_version: 1,
 
         phase: phase.to_string(),
-        /// Field `gate` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         gate: "semantic".to_string(),
-        /// Field `status` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         status: "pass".to_string(),
-        /// Field `command` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         command: "semantic-verification-parse".to_string(),
 
         exit_code: 0,

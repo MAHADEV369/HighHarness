@@ -16,7 +16,7 @@ use serde_json::{json, Value};
 use crate::error::{HxError, HxResult};
 use crate::schema::tool::{ToolContent, ToolMeta, ToolResult};
 
-/// fn `run` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Execute an atomic in-place file edit.
 pub fn run(args: Value, root: &Path) -> HxResult<ToolResult> {
     let path = args
         .get("path")
@@ -102,13 +102,11 @@ pub fn run(args: Value, root: &Path) -> HxResult<ToolResult> {
     }
     fs::rename(&tmp, &full)?;
 
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(ToolResult {
         schema_version: 1,
 
         ok: true,
         content: ToolContent {
-            /// Field `kind` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             kind: "text".to_string(),
 
             value: Value::String(format!("wrote {} bytes to {}", new_content.len(), path)),
@@ -130,7 +128,7 @@ pub fn run(args: Value, root: &Path) -> HxResult<ToolResult> {
 }
 
 #[allow(dead_code)]
-/// fn `descriptor` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+/// Return the tool descriptor for `fs.edit`.
 pub fn descriptor() -> serde_json::Value {
     json!({
         "id": "fs.edit",

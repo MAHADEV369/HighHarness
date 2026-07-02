@@ -4,10 +4,7 @@ use std::fs;
 use std::path::Path;
 use std::process::Command;
 
-use serde_json::{json, Value};
-
-#[allow(unused_imports)]
-use std::any::type_name;
+use serde_json::json;
 
 use crate::canonical;
 use crate::error::{HxError, HxResult};
@@ -23,7 +20,6 @@ use crate::telemetry;
 pub fn init(root: &Path, human: &str) -> HxResult<Bootstrap> {
     if bootstrap_path(root).exists() {
         return Err(HxError::NotYetEnforced {
-            /// Field `what` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             what: "bootstrap already initialized; re-bootstrap is human-only (§6.2)".to_string(),
         });
     }
@@ -87,6 +83,9 @@ pub fn init(root: &Path, human: &str) -> HxResult<Bootstrap> {
     // 8. Seed config.toml.
     seed_config(root)?;
 
+    // 8b. Seed eval fixtures from data/evals/ if present.
+    seed_eval_fixtures(root)?;
+
     // 9. Bootstrap eval. For v1, we do a tiny in-repo fixture eval: create a
     //    file, run a gate, append Entry 1, revert. We use the existing
     //    changelog code path so the eval exercises the compare-and-append
@@ -126,7 +125,6 @@ pub fn init(root: &Path, human: &str) -> HxResult<Bootstrap> {
     }
     fs::write(bootstrap_path(root), serde_json::to_string_pretty(&bs)?)?;
 
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(bs)
 }
 
@@ -158,13 +156,10 @@ pub fn verify(root: &Path) -> HxResult<Bootstrap> {
     if !broken.is_empty() {
         return Err(HxError::ChainBroken {
             index: broken[0],
-            /// Field `expected` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             expected: "see log".to_string(),
-            /// Field `got` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
             got: "see log".to_string(),
         });
     }
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(bs)
 }
 
@@ -196,149 +191,172 @@ fn git_head(root: &Path) -> Option<String> {
     if !out.status.success() {
         return None;
     }
-    /// Variant `Some` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Some(String::from_utf8_lossy(&out.stdout).trim().to_string())
 }
 
 fn materialize_builtin_tools(root: &Path) -> HxResult<()> {
-    use crate::tools;
     let dir = tools_dir(root);
     fs::create_dir_all(&dir)?;
-    let tools: Vec<(&str, &str, &str, &str, &str, &str, &str, &str, &str, &str)> = vec![
-        (
-            "fs.read",
-            "Read a file as text or bytes.",
-            "read",
-            "false",
-            "false",
-            "false",
-            "false",
-            "false",
-            "auto",
-            "read-only",
-        ),
-        (
-            "fs.hash",
-            "SHA-256 of a file at path.",
-            "read",
-            "false",
-            "false",
-            "false",
-            "false",
-            "false",
-            "auto",
-            "read-only",
-        ),
-        (
-            "fs.edit",
-            "Atomic in-place file edit (substring, byte range, or line insert).",
-            "write",
-            "true",
-            "false",
-            "false",
-            "false",
-            "false",
-            "auto",
-            "writes path-scoped",
-        ),
-        (
-            "git.status",
-            "Run `git status --porcelain=v2 -b`.",
-            "read",
-            "false",
-            "false",
-            "false",
-            "false",
-            "false",
-            "auto",
-            "read-only",
-        ),
-        (
-            "git.diff",
-            "Run `git diff <target>` (default HEAD).",
-            "read",
-            "false",
-            "false",
-            "false",
-            "false",
-            "false",
-            "auto",
-            "read-only",
-        ),
-        (
-            "git.blame",
-            "Run `git blame` on a file (optionally a line range).",
-            "read",
-            "false",
-            "false",
-            "false",
-            "false",
-            "false",
-            "auto",
-            "read-only",
-        ),
-        (
-            "shell.exec",
-            "Spawn a shell command with cwd + env allowlist + timeout.",
-            "exec",
-            "false",
-            "true",
-            "false",
-            "true",
-            "false",
-            "ask",
-            "exec",
-        ),
-        (
-            "test.run",
-            "Run the configured test command for a phase.",
-            "exec",
-            "false",
-            "true",
-            "false",
-            "false",
-            "false",
-            "auto",
-            "configured test runner",
-        ),
-        (
-            "lint.run",
-            "Run the configured lint command.",
-            "exec",
-            "false",
-            "true",
-            "false",
-            "false",
-            "false",
-            "auto",
-            "configured lint runner",
-        ),
-        (
-            "web.fetch",
-            "Fetch a URL with curl.",
-            "network",
-            "false",
-            "false",
-            "true",
-            "false",
-            "false",
-            "ask",
-            "network egress",
-        ),
+
+    struct BuiltinTool {
+        id: &'static str,
+        summary: &'static str,
+        side_effect: &'static str,
+        read: bool,
+        write: bool,
+        exec: bool,
+        network: bool,
+        destructive: bool,
+        secrets: bool,
+        approval_mode: &'static str,
+        approval_reason: &'static str,
+    }
+
+    let tools: Vec<BuiltinTool> = vec![
+        BuiltinTool {
+            id: "fs.read",
+            summary: "Read a file as text or bytes.",
+            side_effect: "read",
+            read: true,
+            write: false,
+            exec: false,
+            network: false,
+            destructive: false,
+            secrets: false,
+            approval_mode: "auto",
+            approval_reason: "read-only",
+        },
+        BuiltinTool {
+            id: "fs.hash",
+            summary: "SHA-256 of a file at path.",
+            side_effect: "read",
+            read: true,
+            write: false,
+            exec: false,
+            network: false,
+            destructive: false,
+            secrets: false,
+            approval_mode: "auto",
+            approval_reason: "read-only",
+        },
+        BuiltinTool {
+            id: "fs.edit",
+            summary: "Atomic in-place file edit (substring, byte range, or line insert).",
+            side_effect: "write",
+            read: false,
+            write: true,
+            exec: false,
+            network: false,
+            destructive: false,
+            secrets: false,
+            approval_mode: "auto",
+            approval_reason: "writes path-scoped",
+        },
+        BuiltinTool {
+            id: "git.status",
+            summary: "Run `git status --porcelain=v2 -b`.",
+            side_effect: "read",
+            read: true,
+            write: false,
+            exec: false,
+            network: false,
+            destructive: false,
+            secrets: false,
+            approval_mode: "auto",
+            approval_reason: "read-only",
+        },
+        BuiltinTool {
+            id: "git.diff",
+            summary: "Run `git diff <target>` (default HEAD).",
+            side_effect: "read",
+            read: true,
+            write: false,
+            exec: false,
+            network: false,
+            destructive: false,
+            secrets: false,
+            approval_mode: "auto",
+            approval_reason: "read-only",
+        },
+        BuiltinTool {
+            id: "git.blame",
+            summary: "Run `git blame` on a file (optionally a line range).",
+            side_effect: "read",
+            read: true,
+            write: false,
+            exec: false,
+            network: false,
+            destructive: false,
+            secrets: false,
+            approval_mode: "auto",
+            approval_reason: "read-only",
+        },
+        BuiltinTool {
+            id: "shell.exec",
+            summary: "Spawn a shell command with cwd + env allowlist + timeout.",
+            side_effect: "exec",
+            read: false,
+            write: false,
+            exec: true,
+            network: false,
+            destructive: true,
+            secrets: false,
+            approval_mode: "ask",
+            approval_reason: "exec",
+        },
+        BuiltinTool {
+            id: "test.run",
+            summary: "Run the configured test command for a phase.",
+            side_effect: "exec",
+            read: false,
+            write: false,
+            exec: true,
+            network: false,
+            destructive: false,
+            secrets: false,
+            approval_mode: "auto",
+            approval_reason: "configured test runner",
+        },
+        BuiltinTool {
+            id: "lint.run",
+            summary: "Run the configured lint command.",
+            side_effect: "exec",
+            read: false,
+            write: false,
+            exec: true,
+            network: false,
+            destructive: false,
+            secrets: false,
+            approval_mode: "auto",
+            approval_reason: "configured lint runner",
+        },
+        BuiltinTool {
+            id: "web.fetch",
+            summary: "Fetch a URL with curl.",
+            side_effect: "network",
+            read: false,
+            write: false,
+            exec: false,
+            network: true,
+            destructive: false,
+            secrets: false,
+            approval_mode: "ask",
+            approval_reason: "network egress",
+        },
     ];
-    for (id_, summary, side, write, exec, network, destructive, secrets, mode, reason) in tools {
-        let read = side == "read";
+
+    for t in &tools {
         let body = format!(
-            r#"id = "{id_}"
+            r#"id = "{id}"
 schema_version = 1
 version = "1.0.0"
 source = "builtin"
 extension_id = ""
 mcp_server = ""
 summary = "{summary}"
-argument_schema_path = ".harness/tools/schemas/{id_}.args.json"
-return_schema_path = ".harness/tools/schemas/{id_}.returns.json"
-side_effect = "{side}"
+argument_schema_path = ".harness/tools/schemas/{id}.args.json"
+return_schema_path = ".harness/tools/schemas/{id}.returns.json"
+side_effect = "{side_effect}"
 
 [capabilities]
 read = {read}
@@ -347,23 +365,28 @@ exec = {exec}
 network = {network}
 destructive = {destructive}
 secrets = {secrets}
-side_effect = "{side}"
+side_effect = "{side_effect}"
 
 [approval]
 mode = "{mode}"
 reason = "{reason}"
-"#
+"#,
+            id = t.id,
+            summary = t.summary,
+            side_effect = t.side_effect,
+            read = t.read,
+            write = t.write,
+            exec = t.exec,
+            network = t.network,
+            destructive = t.destructive,
+            secrets = t.secrets,
+            mode = t.approval_mode,
+            reason = t.approval_reason,
         );
-        fs::write(dir.join(format!("{}.toml", id_)), body)?;
+        fs::write(dir.join(format!("{}.toml", t.id)), body)?;
     }
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(())
 }
-
-// Marker type so the tools module import is used.
-#[allow(dead_code)]
-/// struct `DescriptorMarker` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
-pub struct DescriptorMarker;
 
 fn seed_permissions(root: &Path) -> HxResult<()> {
     let body = r#"schema_version = 1
@@ -420,7 +443,6 @@ reason = "allow fs.* on any path that isn't denied above"
         fs::create_dir_all(parent)?;
     }
     fs::write(permissions_path(root), body)?;
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(())
 }
 
@@ -451,7 +473,6 @@ tier = "flagship"
         fs::create_dir_all(parent)?;
     }
     fs::write(models_path(root), body)?;
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(())
 }
 
@@ -480,7 +501,6 @@ mode = "primary-only"
         fs::create_dir_all(parent)?;
     }
     fs::write(routing_path(root), body)?;
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok(())
 }
 
@@ -545,7 +565,39 @@ smoke = { cmd = "true", timeout = "30s" }
         fs::create_dir_all(parent)?;
     }
     fs::write(config_path(root), body)?;
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
+    Ok(())
+}
+
+fn seed_eval_fixtures(root: &Path) -> HxResult<()> {
+    let data_evals = root.join("data").join("evals");
+    if !data_evals.exists() {
+        return Ok(());
+    }
+    let evals_dir = crate::store::harness_dir(root).join("evals");
+    fs::create_dir_all(&evals_dir)?;
+    for entry in fs::read_dir(&data_evals)? {
+        let entry = entry?;
+        if entry.path().is_dir() {
+            let dest = evals_dir.join(entry.file_name());
+            if !dest.exists() {
+                copy_dir_all(&entry.path(), &dest)?;
+            }
+        }
+    }
+    Ok(())
+}
+
+fn copy_dir_all(src: &Path, dest: &Path) -> HxResult<()> {
+    fs::create_dir_all(dest)?;
+    for entry in fs::read_dir(src)? {
+        let entry = entry?;
+        let dest_path = dest.join(entry.file_name());
+        if entry.path().is_dir() {
+            copy_dir_all(&entry.path(), &dest_path)?;
+        } else {
+            fs::copy(entry.path(), &dest_path)?;
+        }
+    }
     Ok(())
 }
 
@@ -569,25 +621,18 @@ fn run_eval(root: &Path, _human: &str, genesis_hash: &str) -> HxResult<(String, 
         n: 1,
 
         ts: id::now_iso(),
-        /// Field `agent` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         agent: "highharness/bootstrap".to_string(),
 
         run_id: run_id_eval.clone(),
-        /// Field `tier` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         tier: "trivial".to_string(),
 
         files: vec!["evals/bootstrap-readme/notes.md".to_string()],
-        /// Field `intent` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         intent: "bootstrap eval: verify compare-and-append against GENESIS".to_string(),
         diff_summary: "appended 'verified by HighHarness' to evals/bootstrap-readme/notes.md"
             .to_string(),
-        /// Field `evidence` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         evidence: "changelog verify_chain returns empty".to_string(),
-        /// Field `attribution` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         attribution: "none".to_string(),
-        /// Field `verification` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         verification: "syntactic".to_string(),
-        /// Field `status` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         status: "added".to_string(),
 
         prev_hash: genesis_hash.to_string(),
@@ -603,13 +648,13 @@ fn run_eval(root: &Path, _human: &str, genesis_hash: &str) -> HxResult<(String, 
     // (We do NOT remove the changelog entry; it is the canonical Entry 1
     // of the harness's first run.)
     let _ = (artifacts_dir(root), harness_dir(root));
-    /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
     Ok((run_id_eval, passed))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::Value;
     use tempfile::TempDir;
 
     #[test]
@@ -636,7 +681,7 @@ mod tests {
     }
 
     #[test]
-    fn bootstrap_init_seeds_R_DENY_HARNESS_and_others() {
+    fn bootstrap_init_seeds_r_deny_harness_and_others() {
         let dir = TempDir::new().unwrap();
         init(dir.path(), "admin").unwrap();
         let raw = std::fs::read_to_string(permissions_path(dir.path())).unwrap();
@@ -668,7 +713,7 @@ mod tests {
     }
 
     #[test]
-    fn bootstrap_init_appends_GENESIS_marker_with_correct_hash() {
+    fn bootstrap_init_appends_genesis_marker_with_correct_hash() {
         let dir = TempDir::new().unwrap();
         init(dir.path(), "admin").unwrap();
         let raw = std::fs::read_to_string(changelog_path(dir.path())).unwrap();
@@ -685,7 +730,7 @@ mod tests {
     }
 
     #[test]
-    fn bootstrap_init_runs_eval_and_appends_Entry_1_chained_to_genesis() {
+    fn bootstrap_init_runs_eval_and_appends_entry_1_chained_to_genesis() {
         let dir = TempDir::new().unwrap();
         init(dir.path(), "admin").unwrap();
         // The eval should have appended Entry 1.

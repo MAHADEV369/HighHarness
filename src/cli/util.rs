@@ -13,10 +13,8 @@ use crate::error::HxResult;
 pub fn read_json_or_path(input: &str) -> HxResult<String> {
     let trimmed = input.trim_start();
     if trimmed.starts_with('{') || trimmed.starts_with('[') {
-        /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         Ok(input.to_string())
     } else {
-        /// Variant `Ok` — Implements HARNESS_PRIMITIVES.md / HARNESS_ENGINEERING.md.
         Ok(std::fs::read_to_string(input)?)
     }
 }
