@@ -46,13 +46,18 @@ pub fn run(cmd: Cmd, root: &Path) -> HxResult<i32> {
             messages_file,
             messages,
         } => {
-            let _ = model;
-            let _ = messages_file;
-            let _ = messages;
+            let msgs: Vec<crate::models::openai_compat::Message> = if let Some(ref path) = messages_file {
+                let raw = std::fs::read_to_string(path)?;
+                serde_json::from_str(&raw)?
+            } else if let Some(ref inline) = messages {
+                serde_json::from_str(inline)?
+            } else {
+                vec![]
+            };
             let redactions = crate::redaction::Redactions::load(root)?;
             let req = crate::models::openai_compat::CompleteRequest {
                 model_id: model,
-                messages: vec![],
+                messages: msgs,
                 tools: None,
                 system: None,
                 max_tokens: None,
@@ -61,9 +66,24 @@ pub fn run(cmd: Cmd, root: &Path) -> HxResult<i32> {
                 prefill: None,
                 stream: false,
             };
-            let events = crate::models::openai_compat::complete(&req, &redactions, root)?;
-            for e in &events {
-                println!("{}", serde_json::to_string(e).unwrap());
+            match crate::models::openai_compat::complete(&req, &redactions, root) {
+                Ok(events) => {
+                    for e in &events {
+                        println!("{}", serde_json::to_string(e).unwrap());
+                    }
+                }
+                Err(e) => {
+                    let err_event = crate::models::openai_compat::ModelEvent {
+                        kind: "error".to_string(),
+                        delta: None,
+                        tool_call: None,
+                        usage: None,
+                        cost: None,
+                        finish_reason: None,
+                        error: Some(e.to_string()),
+                    };
+                    println!("{}", serde_json::to_string(&err_event).unwrap());
+                }
             }
             Ok(0)
         }

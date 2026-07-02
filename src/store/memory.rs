@@ -101,39 +101,112 @@ pub fn query(
 
 /// Pin or unpin an entry.
 pub fn pin(root: &Path, id: &str, pinned: bool) -> HxResult<()> {
-    let _ = (root, id, pinned);
+    let lock_path = locks_dir(root).join("memory.lock");
+    let _lock = crate::store::locks::FileLock::acquire(&lock_path, 5000)?;
+
+    let memory_dir = memory_dir(root);
+    if !memory_dir.exists() {
+        return Ok(());
+    }
+
+    for entry in fs::read_dir(&memory_dir)? {
+        let entry = entry?;
+        let p = entry.path();
+        if p.extension().and_then(|x| x.to_str()) != Some("jsonl") {
+            continue;
+        }
+        let raw = fs::read_to_string(&p)?;
+        let mut found = false;
+        let mut new_lines: Vec<String> = Vec::new();
+        for line in raw.lines() {
+            if line.trim().is_empty() {
+                continue;
+            }
+            if let Ok(mut v) = serde_json::from_str::<serde_json::Value>(line) {
+                if v.get("id").and_then(|x| x.as_str()) == Some(id) {
+                    if let Some(obj) = v.as_object_mut() {
+                        obj.insert("pinned".to_string(), serde_json::json!(pinned));
+                    }
+                    found = true;
+                }
+                new_lines.push(serde_json::to_string(&v)?);
+            } else {
+                new_lines.push(line.to_string());
+            }
+        }
+        if found {
+            let mut out = new_lines.join("\n");
+            if !out.is_empty() {
+                out.push('\n');
+            }
+            fs::write(&p, out)?;
+            return Ok(());
+        }
+    }
+
     Ok(())
 }
 
 /// Forget an entry (tombstone).
 pub fn forget(root: &Path, id: &str) -> HxResult<()> {
-    let tomb = MemoryEntry {
-        schema_version: 1,
-
-        id: format!("tomb_{}", id),
-
-        stream: String::new(),
-        kind: "tombstone".to_string(),
-
-        subject: String::new(),
-
-        body: id.to_string(),
-
-        evidence_run_id: String::new(),
-
-        pinned: false,
-
-        tags: Vec::new(),
-
-        created_at: crate::id::now_iso(),
-
-        ttl_days: None,
-
-        tombstone: true,
-    };
     let lock_path = locks_dir(root).join("memory.lock");
     let _lock = crate::store::locks::FileLock::acquire(&lock_path, 5000)?;
-    let _ = tomb; // suppress unused
+
+    let memory_dir = memory_dir(root);
+    if !memory_dir.exists() {
+        return Ok(());
+    }
+
+    let mut found_stream: Option<String> = None;
+    for entry in fs::read_dir(&memory_dir)? {
+        let entry = entry?;
+        let p = entry.path();
+        if p.extension().and_then(|x| x.to_str()) != Some("jsonl") {
+            continue;
+        }
+        let raw = fs::read_to_string(&p)?;
+        for line in raw.lines() {
+            if line.trim().is_empty() {
+                continue;
+            }
+            if let Ok(v) = serde_json::from_str::<serde_json::Value>(line) {
+                if v.get("id").and_then(|x| x.as_str()) == Some(id) {
+                    if let Some(fname) = p.file_stem().and_then(|x| x.to_str()) {
+                        found_stream = Some(fname.to_string());
+                    }
+                    break;
+                }
+            }
+        }
+        if found_stream.is_some() {
+            break;
+        }
+    }
+
+    if let Some(stream) = found_stream {
+        let path = memory_dir.join(format!("{}.jsonl", stream));
+        let mut f = fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&path)?;
+        let tomb = serde_json::json!({
+            "schema_version": 1,
+            "id": format!("tomb_{}", id),
+            "stream": stream,
+            "kind": "tombstone",
+            "subject": "",
+            "body": id,
+            "evidence_run_id": "",
+            "pinned": false,
+            "tags": [],
+            "created_at": crate::id::now_iso(),
+            "ttl_days": null,
+            "tombstone": true,
+        });
+        writeln!(f, "{}", serde_json::to_string(&tomb)?)?;
+        f.sync_data()?;
+    }
+
     Ok(())
 }
 

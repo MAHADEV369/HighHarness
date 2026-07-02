@@ -34,7 +34,7 @@ fn models_complete_accepts_messages_file() {
     let mut tmp = tempfile::NamedTempFile::new().unwrap();
     writeln!(
         tmp,
-        r#"{{"model":"llama-3.3-70b-local","messages":[{{"role":"user","content":"test"}}]}}"#
+        r#"[{{"role":"user","content":"test"}}]"#
     )
     .unwrap();
     let mut cmd = Command::cargo_bin("HighHarness").unwrap();

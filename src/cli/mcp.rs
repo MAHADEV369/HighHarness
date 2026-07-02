@@ -53,9 +53,19 @@ pub enum McpCmd {
     },
     /// List registered servers.
     List,
-    /// Start the harness as an MCP server over stdio (W8).
+    /// Start the harness as an MCP server over stdio.
     /// Reads JSON-RPC 2.0 from stdin, writes responses to stdout.
     Serve,
+    /// Start the harness as an MCP server over HTTP.
+    /// Accepts JSON-RPC 2.0 via HTTP POST requests.
+    ServeHttp {
+        /// Port to listen on.
+        #[clap(long, default_value = "8931")]
+        port: u16,
+        /// Host to bind to.
+        #[clap(long, default_value = "127.0.0.1")]
+        host: String,
+    },
 }
 
 /// Run the MCP subcommand.
@@ -111,5 +121,6 @@ pub fn run(cmd: Cmd, root: &Path) -> HxResult<i32> {
             Ok(0)
         }
         McpCmd::Serve => crate::mcp::serve::serve(root),
+        McpCmd::ServeHttp { port, host } => crate::mcp::serve::serve_http(root, host, port),
     }
 }

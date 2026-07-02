@@ -3,4 +3,6 @@
 
 pub mod registry;
 pub mod sandbox;
+/// MCP server mode: exposes the harness tool registry as an MCP server
+/// over stdio with permission enforcement and episode recording.
 pub mod serve;

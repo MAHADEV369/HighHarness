@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "highharness": {
+      "command": "/absolute/path/to/HighHarness",
+      "args": ["mcp", "serve"],
+      "env": {}
+    }
+  }
+}

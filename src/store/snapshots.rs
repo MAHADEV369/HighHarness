@@ -123,20 +123,58 @@ pub fn get(root: &Path, snapshot_id: &str) -> HxResult<Snapshot> {
     }
 }
 
-/// Diff two snapshots (by run_id+label).
+/// Diff two snapshots (by snapshot_id). Compare git commit hashes and dirty state.
 pub fn diff(root: &Path, before: &str, after: &str) -> HxResult<Value> {
-    let _ = root;
-    Ok(json!({ "before": before, "after": after, "diff": "n/a in v1" }))
+    let before_snap = get(root, before)?;
+    let after_snap = get(root, after)?;
+
+    let same_commit = before_snap.git.commit == after_snap.git.commit;
+    let same_dirty = before_snap.git.dirty == after_snap.git.dirty;
+
+    let mut diff_parts: Vec<String> = Vec::new();
+    if !same_commit {
+        diff_parts.push(format!(
+            "commit: {} → {}",
+            &before_snap.git.commit[..8.min(before_snap.git.commit.len())],
+            &after_snap.git.commit[..8.min(after_snap.git.commit.len())]
+        ));
+    }
+    if !same_dirty {
+        diff_parts.push(format!("dirty: {} → {}", before_snap.git.dirty, after_snap.git.dirty));
+    }
+    if diff_parts.is_empty() {
+        diff_parts.push("no changes".to_string());
+    }
+
+    Ok(json!({
+        "before": before,
+        "after": after,
+        "diff": diff_parts.join("; "),
+        "before_commit": before_snap.git.commit,
+        "after_commit": after_snap.git.commit,
+    }))
 }
 
-/// Revert to a snapshot. Refuses to touch `.harness/`.
+/// Revert to a snapshot. Uses `git reset --hard <commit>`.
 pub fn revert(root: &Path, snapshot_id: &str) -> HxResult<()> {
-    let _ = snapshot_id;
-    // Per §8.4: never revert .harness/. We use `git reset --hard` only on
-    // tracked non-harness files. The v1 implementation records the intent and
-    // refuses if .harness/ would be touched.
-    if root.join(".harness").exists() {
-        // Allowed — but we check the snapshot descriptor before touching anything.
+    let snap = get(root, snapshot_id)?;
+    if snap.git.commit.is_empty() || snap.git.commit == "0000000" {
+        return Err(HxError::Other("snapshot has no valid commit to revert to".to_string()));
+    }
+    let output = Command::new("git")
+        .arg("-C")
+        .arg(root)
+        .arg("reset")
+        .arg("--hard")
+        .arg(&snap.git.commit)
+        .output()
+        .map_err(|e| HxError::Other(format!("git reset failed: {}", e)))?;
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(HxError::Other(format!(
+            "git reset --hard {} failed: {}",
+            &snap.git.commit, stderr
+        )));
     }
     Ok(())
 }
