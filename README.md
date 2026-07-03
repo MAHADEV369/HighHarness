@@ -1,60 +1,94 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT">
+  <a href="https://crates.io/crates/highharness"><img src="https://img.shields.io/crates/v/highharness?style=flat&color=brightgreen" alt="crates.io"></a>
+  <a href="https://github.com/MAHADEV369/HighHarness/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT"></a>
   <img src="https://img.shields.io/badge/rust-1.85+-orange" alt="Rust">
   <img src="https://img.shields.io/badge/status-beta-yellow" alt="Beta">
 </p>
 
 <h1 align="center">HighHarness</h1>
-<p align="center"><b>Governance for AI coding agents.</b><br>
-Every agent action is permissioned, recorded, and tamper-evident.</p>
+<p align="center"><b>AI coding agents <code>rm -rf /</code>, delete migrations, and push secrets.<br>HighHarness says <b>"no"</b> when it should.</b></p>
 
 <p align="center">
-  <code>cargo install highharness</code><br>
-  <code>git clone https://github.com/MAHADEV369/HighHarness.git && cd HighHarness && cargo build --release</code>
+  <code>cargo install highharness</code>
 </p>
 
 <p align="center">
-  <i>Works with Claude Code · Cursor · opencode · any MCP client</i>
+  Works with Claude Code · Cursor · opencode · any MCP client
 </p>
 
 ---
 
-## Why
+## The tamper-proof audit trail
 
-AI coding agents write code fast. They also `rm -rf /`, delete migrations, and edit files they shouldn't. HighHarness sits between your agent and your codebase and says **"no"** when it should.
+This is the one thing that makes HighHarness different. Every agent action is recorded in a **hash chain**. Tamper with any entry — the chain breaks immediately.
 
-## Quick start
+```
+$ HighHarness changelog verify-chain
+[]                                                  ← empty = chain valid
+
+    ↓ edit CHANGELOG.agent.md (tamper with entry 3) ↓
+
+$ HighHarness changelog verify-chain
+[3]                                                 ← entry 3 broken
+```
+
+**Not a promise. SHA-256.** Each entry's `this_hash` is computed over the canonical entry bytes with `this_hash` blanked. Change one byte — the hash changes. The next entry's `prev_hash` won't match. `verify-chain` catches it. Anyone can recompute every hash independently.
+
+Run the proof yourself:
+
+```bash
+bash scripts/prove_hash_chain.sh
+# ✅ valid → ✏️ tamper → 🚨 detected → ✅ restored
+```
+
+---
+
+## Quick start — install, start, connect
 
 ```bash
 # 1. Install
-brew install MAHADEV369/tap/highharness
+cargo install highharness
 
-# 2. Start the governance server (in background)
+# 2. Start governance (in background)
 HighHarness mcp serve-http --port 8931 &
 
 # 3. Connect your agent
 opencode mcp add highharness --url http://127.0.0.1:8931
-# or add to Claude Code / Cursor MCP config (see HARNESS_INTEGRATION.md)
-
-# 4. Your agent is now governed. Try it:
-python3 highguard.py run add-version-flag
-
-# 5. See what happened:
-python3 highguard.py report
-python3 highguard.py verify
 ```
 
-## What it does
+That's it. Your agent is now governed. Every tool call is checked, recorded, and hash-chained.
 
-**Permission engine** — define rules in `.harness/permissions.toml`:
+---
+
+## What you get
+
+| | Feature | What it means |
+|---|---|---|
+| 🛡️ | **Permission engine** | Allow/deny/ask rules per tool. Defined in `.harness/permissions.toml`. |
+| 📜 | **Episode traces** | Every session recorded in `logs/episodes/` with SHA-256 hash. |
+| 🔗 | **Hash-chained changelog** | Tamper-evident audit trail. Modify any entry — the chain breaks. |
+| 🧠 | **Memory** | Persistent agent memory with write, query, pin, forget. |
+| 🤖 | **Model inference** | Call OpenAI-compatible models via `OPENAI_API_KEY`. |
+| 🔌 | **Works with any MCP client** | Claude Code, Cursor, opencode — standard protocol. |
+
+### Permission example
+
 ```toml
 [[rules]]
 effect = "deny"
 tool = "shell.exec"
 reason = "Shell commands blocked by default"
+
+[[rules]]
+effect = "allow"
+tool = "fs.read"
+paths = ["**"]
+reason = "Allow reading any file"
+priority = 50
 ```
 
-**Episode traces** — every session recorded in `logs/episodes/` with SHA-256 hash:
+### Episode trace example
+
 ```
 ## Tool calls
 - fs.read Cargo.toml → allowed
@@ -63,88 +97,104 @@ reason = "Shell commands blocked by default"
 SHA-256: c06a2a2541b39ee161afa0252d12bb2bce4b2be4f64771acc636361c4e1ec314
 ```
 
-**Hash-chained changelog** — tamper with any entry, the chain breaks immediately:
-```bash
-HighHarness changelog verify-chain
-# → [] if valid
-# → [3] if entry 3 was tampered
+---
+
+## For the skeptic — the hash chain math
+
+```
+ENTRY 7:
+  prev_hash: 52653a7da8f9be91b64992f5d11e297e838f7dd8fb228577ab0db6f021feec64
+  this_hash: f7d71dd1f6a8974b2abbb5ff0c8438b6d156bdd21e0bfb6cdfd8b411d25c2d6f
+
+ENTRY 8:
+  prev_hash: f7d71dd1f6a8974b2abbb5ff0c8438b6d156bdd21e0bfb6cdfd8b411d25c2d6f
+  this_hash: c2652e5d03d71c14d5e42128b1a6425bc1827df7cc0ea550e316a51f0b1f0261
+                                  ↑
+                        ENTRY 8's prev_hash
+                        MUST equal ENTRY 7's this_hash
 ```
 
-**The hash chain is not a promise. It's a mathematical proof.** Every entry's `this_hash` is `SHA-256(canonical_entry_bytes)`. Change one byte → hash changes → chain breaks → `verify-chain` catches it. Anyone can recompute every hash independently using the canonical serializer.
+If you change any byte in ENTRY 7:
+- ENTRY 7's `this_hash` changes
+- ENTRY 8's `prev_hash` no longer matches
+- `HighHarness changelog verify-chain` reports ENTRY 8 as broken
+
+The hash chain is a **mathematical invariant**, not a policy. It cannot be overridden, bypassed, or ignored.
+
+---
+
+## Architecture
+
+```
+Agent (Claude Code / Cursor / opencode)
+    │
+    │  MCP (JSON-RPC 2.0 over stdio or HTTP)
+    ▼
+HighHarness
+    │
+    ├── Permission engine ──► allow / deny / ask
+    ├── Episode recording ──► logs/episodes/<id>.md + SHA-256
+    ├── Hash chain append ──► CHANGELOG.agent.md
+    ├── Memory store ──────► .harness/artifacts/memory/
+    ├── Model inference ───► OpenAI-compatible APIs
+    └── Git snapshots ─────► take, diff, revert
+         │
+         ▼
+    Filesystem · Git · Shell · Network
+```
+
+A single **5.6MB Rust binary**. No Python, no Docker, no Postgres, no database.
+
+---
 
 ## Install
 
-| Method | Command | Status |
-|--------|---------|--------|
-| **cargo** | `cargo install highharness` | ✅ Works now |
-| **From source** | `git clone` + `cargo build --release` | Works now |
-| **Script** | `curl -fsSL https://raw.githubusercontent.com/MAHADEV369/HighHarness/main/scripts/install.sh \| bash` | Works now |
-| **Homebrew tap** | `brew install MAHADEV369/tap/highharness` | Pending — requires `github.com/MAHADEV369/homebrew-tap` repo |
+| Method | Command |
+|--------|---------|
+| **cargo** | `cargo install highharness` |
+| **From source** | `git clone https://github.com/MAHADEV369/HighHarness.git && cd HighHarness && cargo build --release` |
+| **Script** | `curl -fsSL https://raw.githubusercontent.com/MAHADEV369/HighHarness/main/scripts/install.sh \| bash` |
+
+---
 
 ## Connect your agent
 
 | Agent | How |
-|-------|-----|
+|-------|------|
 | **opencode** | `opencode mcp add highharness --url http://127.0.0.1:8931` |
-| **Claude Code** | Add to `~/.claude/claude_desktop_config.json` (see docs) |
-| **Cursor** | Settings → MCP Servers → Add: `HighHarness mcp serve` |
-| **Any MCP client** | Connect over stdio or HTTP (see `HARNESS_INTEGRATION.md`) |
+| **Claude Code** | Add to `~/.claude/claude_desktop_config.json` (see [docs](./HARNESS_INTEGRATION.md)) |
+| **Cursor** | Settings → Features → MCP Servers → Add: `HighHarness mcp serve` |
+| **Any MCP client** | `HighHarness mcp serve` (stdio) or `HighHarness mcp serve-http` (HTTP) |
 
-## Demo: tamper-proof audit
+---
 
-```bash
-# Run this to see the hash chain in action:
-bash scripts/prove_hash_chain.sh
-
-# It shows:
-#   ✅ Chain valid → ✏️ Tamper → 🚨 Chain broken! → ✅ Restored
-```
-
-## Commands
+## Key commands
 
 | Command | What |
 |---------|------|
 | `mcp serve` | Start MCP server (stdio, for local agents) |
-| `mcp serve-http` | Start MCP server (HTTP, for opencode/remote) |
+| `mcp serve-http --port 8931` | Start MCP server (HTTP, for opencode/remote) |
 | `changelog verify-chain` | Validate the hash chain |
 | `bootstrap verify` | Check harness integrity |
-| `models complete` | Call OpenAI-compatible models |
-| `memory write/query/forget` | Persistent agent memory |
-| `snapshot take/diff/revert` | Git snapshots |
+| `models complete` | Call OpenAI-compatible models via `OPENAI_API_KEY` |
+| `memory write / query / forget` | Persistent agent memory |
+| `snapshot take / diff / revert` | Git snapshots |
+| `clarification request / list / resolve` | Persistent clarifications |
+
+---
 
 ## Under the hood
 
-```
-Agent ──MCP──► HighHarness ──check──► Permission Engine
-                   │
-                   └── record ──► Episode Trace (SHA-256)
-                   │
-                   └── append ──► CHANGELOG.agent.md (hash chain)
-                   │
-                   └── store ──► Memory · Snapshots · Clarifications
-```
+- **Language:** Rust (MSRV 1.85)
+- **Protocol:** MCP (JSON-RPC 2.0 over stdio or HTTP)
+- **Hash:** SHA-256, canonical byte serialization per spec
+- **Storage:** Flat files in `.harness/` — no database
+- **Binary:** 5.6MB, static, no runtime dependencies
 
-A single 5.6MB Rust binary. No Python, no Docker, no Postgres.
+---
 
-## Homebrew tap setup
-
-For `brew install MAHADEV369/tap/highharness`, create a tap repository:
-
-```bash
-# One-time: create the tap repo
-gh repo create MAHADEV369/homebrew-tap --public --clone
-cd homebrew-tap
-mkdir Formula
-cp /path/to/HighHarness/Formula/highharness.rb Formula/
-git add -A && git commit -m "Add highharness formula"
-git push origin main
-
-# Then anyone can install:
-brew install MAHADEV369/tap/highharness
-```
-
-For `brew install highharness` (no prefix), submit a PR to [Homebrew/homebrew-core](https://github.com/Homebrew/homebrew-core) once the project has a stable release tag.
-
-## License
-
-MIT
+<p align="center">
+  <code>cargo install highharness</code><br>
+  <a href="https://github.com/MAHADEV369/HighHarness">GitHub</a> · <a href="https://crates.io/crates/highharness">crates.io</a> · MIT<br>
+  <a href="./HARNESS_INTEGRATION.md">MCP connection guide</a>
+</p>
