@@ -9,8 +9,8 @@
 Every agent action is permissioned, recorded, and tamper-evident.</p>
 
 <p align="center">
-  <code>brew install MAHADEV369/tap/highharness</code><br>
-  <code>cargo install highharness</code>
+  <code>cargo install highharness</code><br>
+  <code>git clone https://github.com/MAHADEV369/HighHarness.git && cd HighHarness && cargo build --release</code>
 </p>
 
 <p align="center">
@@ -74,12 +74,12 @@ HighHarness changelog verify-chain
 
 ## Install
 
-| Method | Command |
-|--------|---------|
-| **Homebrew** | `brew install MAHADEV369/tap/highharness` |
-| **cargo** | `cargo install highharness` |
-| **From source** | `git clone` + `cargo build --release` |
-| **Script** | `curl -fsSL https://raw.githubusercontent.com/MAHADEV369/HighHarness/main/scripts/install.sh \| bash` |
+| Method | Command | Status |
+|--------|---------|--------|
+| **cargo** | `cargo install highharness` | Works after `cargo publish` (run `cargo publish` in repo) |
+| **From source** | `git clone` + `cargo build --release` | Works now |
+| **Script** | `curl -fsSL https://raw.githubusercontent.com/MAHADEV369/HighHarness/main/scripts/install.sh \| bash` | Works now |
+| **Homebrew tap** | `brew install MAHADEV369/tap/highharness` | Pending — requires `github.com/MAHADEV369/homebrew-tap` repo |
 
 ## Connect your agent
 
@@ -124,7 +124,26 @@ Agent ──MCP──► HighHarness ──check──► Permission Engine
                    └── store ──► Memory · Snapshots · Clarifications
 ```
 
-A single 5.6MB Rust binary. No Python, no Docker, no Postgres. Just `brew install` and go.
+A single 5.6MB Rust binary. No Python, no Docker, no Postgres.
+
+## Homebrew tap setup
+
+For `brew install MAHADEV369/tap/highharness`, create a tap repository:
+
+```bash
+# One-time: create the tap repo
+gh repo create MAHADEV369/homebrew-tap --public --clone
+cd homebrew-tap
+mkdir Formula
+cp /path/to/HighHarness/Formula/highharness.rb Formula/
+git add -A && git commit -m "Add highharness formula"
+git push origin main
+
+# Then anyone can install:
+brew install MAHADEV369/tap/highharness
+```
+
+For `brew install highharness` (no prefix), submit a PR to [Homebrew/homebrew-core](https://github.com/Homebrew/homebrew-core) once the project has a stable release tag.
 
 ## License
 
