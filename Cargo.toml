@@ -3,12 +3,14 @@ name        = "highharness"
 version     = "0.1.0"
 edition     = "2021"
 rust-version = "1.85"
-description = "Runtime-neutral agent harness: hash-chained audit trails, permission gates, episode traces, and verification gates for AI coding agents."
+description = "Governance for AI coding agents. Permissions, audit trails, and tamper-evident hash chains."
+readme      = "README.md"
 license     = "MIT"
 repository  = "https://github.com/MAHADEV369/HighHarness"
 homepage    = "https://github.com/MAHADEV369/HighHarness"
-keywords    = ["agent", "harness", "audit", "verification", "ai"]
-categories  = ["command-line-utilities", "development-tools"]
+documentation = "https://github.com/MAHADEV369/HighHarness#readme"
+keywords    = ["agent", "harness", "governance", "audit", "ai", "mcp", "security"]
+categories  = ["command-line-utilities", "development-tools::ai"]
 
 [features]
 default = []
