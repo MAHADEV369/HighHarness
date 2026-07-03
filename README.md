@@ -6,7 +6,8 @@
 </p>
 
 <h1 align="center">HighHarness</h1>
-<p align="center"><b>AI coding agents <code>rm -rf /</code>, delete migrations, and push secrets.<br>HighHarness says <b>"no"</b> when it should.</b></p>
+<p align="center"><b>Governance for AI coding agents.</b><br>
+Every agent action is permissioned, recorded, and tamper-evident.</p>
 
 <p align="center">
   <code>cargo install highharness</code>
@@ -16,11 +17,30 @@
   Works with Claude Code · Cursor · opencode · any MCP client
 </p>
 
+> The fix for unreliable AI agents is almost never a bigger model. It is a better harness.
+
+---
+
+## What it does
+
+| Capability | What HighHarness enforces |
+|---|---|
+| **🔗 Hash-chained audit trail** | Every change appended with SHA-256 chaining. Tampering breaks the chain visibly. |
+| **🛡️ Permission engine** | Default-deny, priority-sorted rules. Destructive operations blocked by default. |
+| **📜 Episode traces** | Every run produces the full story: plan, tool calls, decisions, failures, verification. |
+| **🧠 Memory** | Persistent key-value store with streams, pin/forget, query across sessions. |
+| **🔍 Verification gates** | Syntactic → Functional → Semantic → Regression. |
+| **🤖 Model inference** | Call OpenAI-compatible models via `OPENAI_API_KEY`. |
+| **🔌 MCP integration** | Expose the harness as an MCP server (stdio or HTTP). Any MCP client connects. |
+| **🔄 Git snapshots** | Take, diff, and revert point-in-time snapshots. |
+| **📋 Clarifications** | Request, list, and resolve persistent clarification requests. |
+| **✂️ Secret redaction** | Regex vault catches AWS keys, PEMs, GitHub PATs, JWTs, GCP keys. |
+
 ---
 
 ## The tamper-proof audit trail
 
-This is the one thing that makes HighHarness different. Every agent action is recorded in a **hash chain**. Tamper with any entry — the chain breaks immediately.
+This is the one thing that makes HighHarness different. Every action is recorded in a **hash chain**. Tamper with any entry — the chain breaks immediately.
 
 ```
 $ HighHarness changelog verify-chain
@@ -32,7 +52,7 @@ $ HighHarness changelog verify-chain
 [3]                                                 ← entry 3 broken
 ```
 
-**Not a promise. SHA-256.** Each entry's `this_hash` is computed over the canonical entry bytes with `this_hash` blanked. Change one byte — the hash changes. The next entry's `prev_hash` won't match. `verify-chain` catches it. Anyone can recompute every hash independently.
+**Not a promise. SHA-256.** Each entry's `this_hash` is computed over the canonical entry bytes with `this_hash` blanked. Change one byte — the hash changes. The next entry's `prev_hash` won't match. `verify-chain` catches it.
 
 Run the proof yourself:
 
@@ -56,46 +76,7 @@ HighHarness mcp serve-http --port 8931 &
 opencode mcp add highharness --url http://127.0.0.1:8931
 ```
 
-That's it. Your agent is now governed. Every tool call is checked, recorded, and hash-chained.
-
----
-
-## What you get
-
-| | Feature | What it means |
-|---|---|---|
-| 🛡️ | **Permission engine** | Allow/deny/ask rules per tool. Defined in `.harness/permissions.toml`. |
-| 📜 | **Episode traces** | Every session recorded in `logs/episodes/` with SHA-256 hash. |
-| 🔗 | **Hash-chained changelog** | Tamper-evident audit trail. Modify any entry — the chain breaks. |
-| 🧠 | **Memory** | Persistent agent memory with write, query, pin, forget. |
-| 🤖 | **Model inference** | Call OpenAI-compatible models via `OPENAI_API_KEY`. |
-| 🔌 | **Works with any MCP client** | Claude Code, Cursor, opencode — standard protocol. |
-
-### Permission example
-
-```toml
-[[rules]]
-effect = "deny"
-tool = "shell.exec"
-reason = "Shell commands blocked by default"
-
-[[rules]]
-effect = "allow"
-tool = "fs.read"
-paths = ["**"]
-reason = "Allow reading any file"
-priority = 50
-```
-
-### Episode trace example
-
-```
-## Tool calls
-- fs.read Cargo.toml → allowed
-- shell.exec rm -rf / → DENIED (Destructive shell blocked)
-## Episode hash
-SHA-256: c06a2a2541b39ee161afa0252d12bb2bce4b2be4f64771acc636361c4e1ec314
-```
+Your agent is now governed. Every tool call is checked, recorded, and hash-chained.
 
 ---
 
@@ -143,7 +124,7 @@ HighHarness
     Filesystem · Git · Shell · Network
 ```
 
-A single **5.6MB Rust binary**. No Python, no Docker, no Postgres, no database.
+A single **5.6MB Rust binary**. No Python, no Docker, no Postgres.
 
 ---
 
@@ -155,8 +136,6 @@ A single **5.6MB Rust binary**. No Python, no Docker, no Postgres, no database.
 | **From source** | `git clone https://github.com/MAHADEV369/HighHarness.git && cd HighHarness && cargo build --release` |
 | **Script** | `curl -fsSL https://raw.githubusercontent.com/MAHADEV369/HighHarness/main/scripts/install.sh \| bash` |
 
----
-
 ## Connect your agent
 
 | Agent | How |
@@ -165,8 +144,6 @@ A single **5.6MB Rust binary**. No Python, no Docker, no Postgres, no database.
 | **Claude Code** | Add to `~/.claude/claude_desktop_config.json` (see [docs](./HARNESS_INTEGRATION.md)) |
 | **Cursor** | Settings → Features → MCP Servers → Add: `HighHarness mcp serve` |
 | **Any MCP client** | `HighHarness mcp serve` (stdio) or `HighHarness mcp serve-http` (HTTP) |
-
----
 
 ## Key commands
 
@@ -180,16 +157,6 @@ A single **5.6MB Rust binary**. No Python, no Docker, no Postgres, no database.
 | `memory write / query / forget` | Persistent agent memory |
 | `snapshot take / diff / revert` | Git snapshots |
 | `clarification request / list / resolve` | Persistent clarifications |
-
----
-
-## Under the hood
-
-- **Language:** Rust (MSRV 1.85)
-- **Protocol:** MCP (JSON-RPC 2.0 over stdio or HTTP)
-- **Hash:** SHA-256, canonical byte serialization per spec
-- **Storage:** Flat files in `.harness/` — no database
-- **Binary:** 5.6MB, static, no runtime dependencies
 
 ---
 
