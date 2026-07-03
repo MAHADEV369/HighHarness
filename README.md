@@ -1,260 +1,131 @@
-# HighHarness
+<p align="center">
+  <img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT">
+  <img src="https://img.shields.io/badge/rust-1.85+-orange" alt="Rust">
+  <img src="https://img.shields.io/badge/status-beta-yellow" alt="Beta">
+</p>
 
-**Runtime-neutral agent governance for AI coding agents.**
+<h1 align="center">HighHarness</h1>
+<p align="center"><b>Governance for AI coding agents.</b><br>
+Every agent action is permissioned, recorded, and tamper-evident.</p>
 
-HighHarness sits between any AI agent (Cursor, Claude Code, opencode) and your codebase.
-It enforces permissions, records every action in tamper-evident episode traces, and
-produces hash-chained audit trails — so every agent change is auditable and safe.
+<p align="center">
+  <code>brew install MAHADEV369/tap/highharness</code><br>
+  <code>cargo install highharness</code>
+</p>
 
-> The fix for unreliable AI agents is almost never a bigger model. It is a better harness.
+<p align="center">
+  <i>Works with Claude Code · Cursor · opencode · any MCP client</i>
+</p>
 
 ---
+
+## Why
+
+AI coding agents write code fast. They also `rm -rf /`, delete migrations, and edit files they shouldn't. HighHarness sits between your agent and your codebase and says **"no"** when it should.
 
 ## Quick start
 
 ```bash
-# Install (macOS, Linux, Windows)
-cargo install highharness
+# 1. Install
+brew install MAHADEV369/tap/highharness
 
-# Or build from source
-git clone https://github.com/MAHADEV369/HighHarness.git
-cd HighHarness
-cargo build --release
+# 2. Start the governance server (in background)
+HighHarness mcp serve-http --port 8931 &
 
-# Start the governance MCP server (agents connect here)
-./target/release/HighHarness mcp serve         # stdio mode (for Claude Code, Cursor)
-./target/release/HighHarness mcp serve-http     # HTTP mode (for opencode, remote clients)
-
-# Test it works
-python3 highguard.py run add-version-flag
-python3 highguard.py report
-```
-
----
-
-## What it does
-
-| Capability | What HighHarness enforces |
-|---|---|
-| **Permission engine** | Default-deny, priority-sorted rules. Destructive operations blocked by default. Customizable via `.harness/permissions.toml`. |
-| **Episode traces** | Every agent session produces `logs/episodes/<run-id>.md` — a complete recording of every tool call, decision, and denial, with SHA-256 tamper-evident hash. |
-| **Hash-chained changelog** | Every change appended to `CHANGELOG.agent.md` with SHA-256 `prev_hash` → `this_hash` chaining. Tampering breaks the chain visibly. |
-| **Memory** | Persistent key-value store with streams, tombstones, pin/forget/query. |
-| **Snapshots** | Git-based point-in-time snapshots with diff and revert. |
-| **Model inference** | `HighHarness models complete` — calls OpenAI-compatible APIs via `OPENAI_API_KEY`. |
-| **Secret redaction** | Regex-based vault scans tool results and episodes for AWS keys, PEMs, GitHub PATs, JWTs, GCP keys. |
-| **MCP integration** | Expose the harness as an MCP server (stdio or HTTP). Any MCP-compatible agent connects and gets governance. |
-
----
-
-## Connect your agent
-
-### opencode
-
-```bash
-# 1. Start HighHarness in HTTP mode
-HighHarness mcp serve-http --port 8931
-
-# 2. Register with opencode
+# 3. Connect your agent
 opencode mcp add highharness --url http://127.0.0.1:8931
+# or add to Claude Code / Cursor MCP config (see HARNESS_INTEGRATION.md)
 
-# 3. Verify
-opencode mcp list
-# → highharness connected
-```
-
-### Claude Code
-
-Add to `~/.claude/claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "highharness": {
-      "command": "/path/to/HighHarness",
-      "args": ["mcp", "serve"],
-      "env": {}
-    }
-  }
-}
-```
-
-### Cursor
-
-1. Settings → Features → MCP Servers → Add
-2. Name: `highharness`, Type: `command`, Command: `/path/to/HighHarness mcp serve`
-
-### Any MCP client
-
-```python
-# See highguard.py and demo_agent.py for complete examples
-import subprocess, json
-
-proc = subprocess.Popen(["HighHarness", "mcp", "serve"],
-    stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-
-# Initialize
-proc.stdin.write(b'{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}\n')
-
-# List tools
-proc.stdin.write(b'{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}\n')
-
-# Call a tool (permissions are enforced)
-proc.stdin.write(b'{"jsonrpc":"2.0","id":3,"method":"tools/call",'
-    b'"params":{"name":"fs.read","arguments":{"path":"Cargo.toml"}}}\n')
-```
-
----
-
-## Usage
-
-### Safe Agent Runner
-
-```bash
-# Run a governed agent task
+# 4. Your agent is now governed. Try it:
 python3 highguard.py run add-version-flag
 
-# View session report
+# 5. See what happened:
 python3 highguard.py report
-
-# Export episodes as training data (OpenAI format)
-python3 highguard.py export openai
-
-# Export as HuggingFace dataset format
-python3 highguard.py export hf
-
-# Verify audit chain
 python3 highguard.py verify
 ```
 
-### Permission configuration
+## What it does
 
-Permissions are defined in `.harness/permissions.toml`:
-
+**Permission engine** — define rules in `.harness/permissions.toml`:
 ```toml
 [[rules]]
-id = "allow-reads"
-effect = "allow"
-tool = "fs.read"
-paths = ["**"]
-reason = "Allow reading any file"
-priority = 50
-
-[[rules]]
-id = "deny-infra"
-effect = "deny"
-tool = "fs.edit"
-paths = [".harness/**", ".git/**"]
-reason = "Protected infrastructure"
-priority = 60
-
-[[rules]]
-id = "deny-destructive-shell"
 effect = "deny"
 tool = "shell.exec"
-reason = "Destructive shell patterns blocked"
-priority = 60
+reason = "Shell commands blocked by default"
 ```
 
-### Episode traces
-
-Every MCP session produces an episode trace at `logs/episodes/<run-id>.md`:
-
+**Episode traces** — every session recorded in `logs/episodes/` with SHA-256 hash:
 ```
-# Episode mcp-2026-07-02T19:11:24Z
-
-## Task spec
-MCP governance session
-
 ## Tool calls
-- {"tool":"fs.read","result_summary":"[package] name = \"highharness\"..."}
-- {"tool":"shell.exec","result_summary":"DENIED: Destructive shell patterns blocked"}
-
+- fs.read Cargo.toml → allowed
+- shell.exec rm -rf / → DENIED (Destructive shell blocked)
 ## Episode hash
 SHA-256: c06a2a2541b39ee161afa0252d12bb2bce4b2be4f64771acc636361c4e1ec314
 ```
 
----
+**Hash-chained changelog** — tamper with any entry, the chain breaks immediately:
+```bash
+HighHarness changelog verify-chain
+# → [] if valid
+# → [3] if entry 3 was tampered
+```
 
-## CLI commands
+**The hash chain is not a promise. It's a mathematical proof.** Every entry's `this_hash` is `SHA-256(canonical_entry_bytes)`. Change one byte → hash changes → chain breaks → `verify-chain` catches it. Anyone can recompute every hash independently using the canonical serializer.
 
-| Command | Purpose |
-|---|---|
-| `mcp serve` | Start MCP server over stdio (for Claude Code, Cursor) |
-| `mcp serve-http` | Start MCP server over HTTP (for opencode) |
-| `bootstrap init` | Initialize harness config |
-| `bootstrap verify` | Verify bootstrap state |
-| `changelog verify-chain` | Verify hash chain integrity |
-| `changelog append` | Append a change entry |
-| `tools invoke` | Invoke a tool with permission check |
-| `tools list` | List registered tools |
-| `permissions list` | List permission rules |
-| `models complete` | Call a model via OpenAI-compatible API |
-| `memory write` | Write a memory entry |
-| `memory query` | Query memory |
-| `memory forget` | Tombstone a memory entry |
-| `snapshot take` | Take a git snapshot |
-| `snapshot diff` | Diff two snapshots |
-| `snapshot revert` | Revert to snapshot |
-| `clarification request` | Request a clarification |
-| `clarification list` | List clarifications |
-| `clarification resolve` | Resolve a clarification |
-| `episode open/append/close` | Episode lifecycle |
+## Install
 
----
+| Method | Command |
+|--------|---------|
+| **Homebrew** | `brew install MAHADEV369/tap/highharness` |
+| **cargo** | `cargo install highharness` |
+| **From source** | `git clone` + `cargo build --release` |
+| **Script** | `curl -fsSL https://raw.githubusercontent.com/MAHADEV369/HighHarness/main/scripts/install.sh \| bash` |
 
-## Built-in tools
+## Connect your agent
 
-| Tool | Capabilities | Permission default |
-|---|---|---|
-| `fs.read` | Read files | auto (allowed) |
-| `fs.hash` | SHA-256 hash files | auto (allowed) |
-| `fs.edit` | Edit files | ask (requires approval) |
-| `shell.exec` | Execute commands | ask (requires approval) |
-| `git.status` | Git status | auto (allowed) |
-| `git.diff` | Git diff | auto (allowed) |
-| `git.blame` | Git blame | auto (allowed) |
-| `test.run` | Run tests | auto (allowed) |
-| `lint.run` | Run linter | auto (allowed) |
-| `web.fetch` | Fetch URLs | ask (requires approval) |
+| Agent | How |
+|-------|-----|
+| **opencode** | `opencode mcp add highharness --url http://127.0.0.1:8931` |
+| **Claude Code** | Add to `~/.claude/claude_desktop_config.json` (see docs) |
+| **Cursor** | Settings → MCP Servers → Add: `HighHarness mcp serve` |
+| **Any MCP client** | Connect over stdio or HTTP (see `HARNESS_INTEGRATION.md`) |
 
----
-
-## Verification
+## Demo: tamper-proof audit
 
 ```bash
-# Run all tests
-cargo test --all-features
+# Run this to see the hash chain in action:
+bash scripts/prove_hash_chain.sh
 
-# End-to-end verification
-python3 demo_agent.py      # 28 checks, all must pass
-python3 highguard.py verify # Verify audit chain
+# It shows:
+#   ✅ Chain valid → ✏️ Tamper → 🚨 Chain broken! → ✅ Restored
 ```
 
----
+## Commands
 
-## Architecture
+| Command | What |
+|---------|------|
+| `mcp serve` | Start MCP server (stdio, for local agents) |
+| `mcp serve-http` | Start MCP server (HTTP, for opencode/remote) |
+| `changelog verify-chain` | Validate the hash chain |
+| `bootstrap verify` | Check harness integrity |
+| `models complete` | Call OpenAI-compatible models |
+| `memory write/query/forget` | Persistent agent memory |
+| `snapshot take/diff/revert` | Git snapshots |
+
+## Under the hood
 
 ```
-Agent (Claude Code / Cursor / opencode)
-    │
-    │  MCP (JSON-RPC 2.0 over stdio or HTTP)
-    ▼
-HighHarness
-    │
-    ├── Permission engine (allow/deny/ask)
-    ├── Episode recording (every tool call logged)
-    ├── Hash-chained changelog
-    ├── Memory store
-    ├── Git snapshots
-    └── Model inference (optional)
-         │
-         ▼
-    Filesystem • Git • Shell • Network
+Agent ──MCP──► HighHarness ──check──► Permission Engine
+                   │
+                   └── record ──► Episode Trace (SHA-256)
+                   │
+                   └── append ──► CHANGELOG.agent.md (hash chain)
+                   │
+                   └── store ──► Memory · Snapshots · Clarifications
 ```
 
----
+A single 5.6MB Rust binary. No Python, no Docker, no Postgres. Just `brew install` and go.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT
