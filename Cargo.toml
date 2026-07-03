@@ -9,8 +9,8 @@ license     = "MIT"
 repository  = "https://github.com/MAHADEV369/HighHarness"
 homepage    = "https://github.com/MAHADEV369/HighHarness"
 documentation = "https://github.com/MAHADEV369/HighHarness#readme"
-keywords    = ["agent", "harness", "governance", "audit", "ai", "mcp", "security"]
-categories  = ["command-line-utilities", "development-tools::ai"]
+keywords    = ["agent", "harness", "governance", "audit", "ai"]
+categories  = ["command-line-utilities", "development-tools"]
 
 [features]
 default = []

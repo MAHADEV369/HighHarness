@@ -8,8 +8,6 @@
 //! deterministic id generation. Used ONLY by the canonical demo Makefile;
 //! normal agent runs MUST NOT use `--pin` per `HARNESS_SECURITY.md` §2.
 
-use std::path::Path;
-
 use clap::Parser;
 
 use crate::error::HxResult;
@@ -57,7 +55,7 @@ pub fn run_id_cmd(cmd: IdRunCmd) -> HxResult<i32> {
         }
         #[cfg(feature = "deterministic")]
         {
-            let bs_path = crate::store::bootstrap_path(Path::new("."));
+            let bs_path = crate::store::bootstrap_path(std::path::Path::new("."));
             let raw = std::fs::read_to_string(&bs_path).map_err(|e| {
                 crate::error::HxError::Other(format!(
                     "id-run --pin: cannot read {}: {}",
@@ -101,7 +99,7 @@ pub fn run_id_agent_cmd(cmd: IdAgentCmd) -> HxResult<i32> {
         }
         #[cfg(feature = "deterministic")]
         {
-            let bs_path = crate::store::bootstrap_path(Path::new("."));
+            let bs_path = crate::store::bootstrap_path(std::path::Path::new("."));
             let raw = std::fs::read_to_string(&bs_path).map_err(|e| {
                 crate::error::HxError::Other(format!(
                     "id-agent --pin: cannot read {}: {}",

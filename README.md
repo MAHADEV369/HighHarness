@@ -76,7 +76,7 @@ HighHarness changelog verify-chain
 
 | Method | Command | Status |
 |--------|---------|--------|
-| **cargo** | `cargo install highharness` | Works after `cargo publish` (run `cargo publish` in repo) |
+| **cargo** | `cargo install highharness` | ✅ Works now |
 | **From source** | `git clone` + `cargo build --release` | Works now |
 | **Script** | `curl -fsSL https://raw.githubusercontent.com/MAHADEV369/HighHarness/main/scripts/install.sh \| bash` | Works now |
 | **Homebrew tap** | `brew install MAHADEV369/tap/highharness` | Pending — requires `github.com/MAHADEV369/homebrew-tap` repo |
