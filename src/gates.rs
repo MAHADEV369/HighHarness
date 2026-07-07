@@ -1,7 +1,6 @@
 //! Verification gate runner, per `HARNESS_PRIMITIVES.md` §7.
 
 use std::fs;
-use std::os::unix::process::ExitStatusExt;
 use std::path::Path;
 use std::process::Command;
 use std::time::{Duration, Instant};
@@ -79,7 +78,7 @@ pub fn run(
         match tokio::time::timeout(timeout_duration, tokio_cmd.output()).await {
             Ok(result) => result.map(|out| {
                 (
-                    std::process::ExitStatus::from_raw(out.status.code().unwrap_or(-1)),
+                    out.status,
                     out.stdout,
                     out.stderr,
                 )

@@ -23,9 +23,10 @@ pub fn run(args: Value, root: &Path) -> HxResult<ToolResult> {
 
 async fn async_run(args: Value, root: &Path) -> HxResult<ToolResult> {
     let cmd = args
-        .get("cmd")
+        .get("command")
+        .or_else(|| args.get("cmd"))
         .and_then(|x| x.as_str())
-        .ok_or_else(|| HxError::Other("shell.exec: missing 'cmd'".to_string()))?;
+        .ok_or_else(|| HxError::Other("shell.exec: missing 'command' or 'cmd'".to_string()))?;
     let timeout_ms = args
         .get("timeout_ms")
         .and_then(|x| x.as_u64())
