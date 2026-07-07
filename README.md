@@ -5,6 +5,8 @@
   <img src="https://img.shields.io/badge/rust-1.85+-orange" alt="Rust">
 </p>
 
+> **Platform:** macOS & Linux. Windows is not currently supported.
+
 <h1 align="center">HighHarness</h1>
 
 <p align="center">
@@ -136,7 +138,7 @@ The hash chain is a **mathematical invariant**, not a policy. It cannot be overr
 - ✓ Malicious or compromised agents
 - ✓ Accidental destructive edits
 - ✓ Audit log tampering (hash chain breaks)
-- ✓ Secret leakage (AWS keys, PEMs, PATs redacted)
+- ⚠️ Secret leakage (tool-result strings redacted via configurable regex vault; episodes and memory redaction planned)
 - ✗ Does not protect against root access, kernel compromise, or deleted repositories
 
 ### 📋 Auditability
@@ -160,7 +162,7 @@ The hash chain is a **mathematical invariant**, not a policy. It cannot be overr
 
 ## Design principles
 
-- **Everything is append-only.** No edits, no deletes. Reverting is a new entry.
+- **Hash chain and episode traces are append-only.** Changelog entries and tool-call records are never modified. Memory store uses append + rewrite for pin/forget operations.
 - **Everything is reproducible.** Same inputs → same hashes.
 - **Nothing is trusted.** Every tool call is checked against policy. Every entry is verified against the hash chain.
 - **Policies are deterministic.** Same rules + same inputs → same decision. No LLM-as-judge in the permission path.
@@ -186,17 +188,86 @@ Your agent is now governed. Every tool call is checked, recorded, and hash-chain
 
 ---
 
-## Benchmarks
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `bootstrap` | Initialize or verify the harness skeleton and hash chain |
+| `changelog` | Append, get, list, or verify the hash-chained changelog |
+| `episode` | Open, append, or close episode traces |
+| `snapshot` | Take, diff, or revert git snapshots |
+| `gates` | Run verification gates (syntactic/functional/semantic/regression) |
+| `tools` | Invoke built-in tools or list tool descriptors |
+| `permissions` | List or test permission rules |
+| `spend` | Track API spend and query cost rollups |
+| `hook` | Manage session hooks for pre/post run lifecycle |
+| `integrity` | Verify or append integrity log entries |
+| `clarification` | Request or respond to agent clarification questions |
+| `eval` | Run evaluations against episode data |
+| `id-run` | Generate or pin run identifiers |
+| `id-agent` | Generate or pin agent identifiers |
+| `metrics` | Compute KPI rollups and alerts |
+| `cadence` | Schedule periodic metrics rollups |
+| `redaction` | Manage secret-redaction patterns |
+| `incident` | Declare and manage security incidents |
+| `models` | Configure model routing and inference |
+| `mcp` | Start MCP server (stdio or HTTP transport) |
+
+---
+
+## Documentation
+
+- [`HARNESS_INTEGRATION.md`](./HARNESS_INTEGRATION.md) — MCP connection guide
+- [`HARNESS_ENGINEERING.md`](./HARNESS_ENGINEERING.md) — engineering workflow and episode lifecycle
+- [`HARNESS_METRICS.md`](./HARNESS_METRICS.md) — KPI definitions and rollup specification
+- [`HARNESS_PRIMITIVES.md`](./HARNESS_PRIMITIVES.md) — artifact schema and storage primitives
+- [`HARNESS_SECURITY.md`](./HARNESS_SECURITY.md) — threat model and incident response
+- [`HARNESS_VERSIONING.md`](./HARNESS_VERSIONING.md) — versioning policy and changelog format
+- [`CONTRIBUTING.md`](./CONTRIBUTING.md) — how to contribute
+
+## Configuration
+
+Create `.harness/permissions.toml` to define what your agent can access:
+
+```toml
+# Default-deny: anything not explicitly allowed is blocked.
+# Rules are evaluated in priority order; first match wins.
+
+[[rules]]
+priority = 100
+effect = "allow"
+paths = ["src/**", "tests/**"]
+network = []
+description = "Allow source and test file access"
+
+[[rules]]
+priority = 200
+effect = "deny"
+paths = [".git/**", "target/**"]
+description = "Never touch build artifacts or git internals"
+```
+
+Tool-specific commands are configured in `.harness/config.toml`:
+
+```toml
+lint_cmd = "cargo clippy --all-targets"
+test_cmd = "cargo test"
+```
+
+See [`HARNESS_PRIMITIVES.md`](./HARNESS_PRIMITIVES.md) for the full spec.
+
+---
+
+## Specifications
 
 | Metric | Value |
 |--------|-------|
-| Binary size | **5.6 MB** (static, no dependencies) |
-| Permission lookup | **0.3 ms** (in-process, deterministic) |
-| Audit append | **0.7 ms** (SHA-256 + file append) |
-| Session startup | **18 ms** (MCP server init) |
 | Episode hash | **SHA-256**, canonical serialization |
-| Test suite | **142 tests**, all passing |
-| Rust toolchain | MSRV 1.85, edition 2021 |
+| Test suite | **142 tests**, passing on `main` |
+| Rust toolchain | MSRV 1.85, edition 2021 (Unix only — macOS, Linux) |
+
+> Benchmark numbers are not yet published. We plan to add criterion-based microbenchmarks
+> for permission lookup, audit append, binary size, and session startup latency.
 
 ---
 
@@ -212,7 +283,7 @@ Your agent is now governed. Every tool call is checked, recorded, and hash-chain
 | **Model adapter** | OpenAI-compatible HTTP inference via `OPENAI_API_KEY` |
 | **MCP server** | JSON-RPC 2.0 over stdio or HTTP — any MCP client connects |
 | **Verification gates** | 4-stage pipeline: syntactic → functional → semantic → regression |
-| **Secret redaction** | Regex vault scanning all tool results, episodes, and memory writes |
+| **Secret redaction** | Regex vault scanning tool-result strings (configurable; episodes and memory planned) |
 
 ---
 
@@ -227,7 +298,7 @@ src/
 ├── models/           # Model registry + OpenAI-compatible adapter
 ├── mcp/              # MCP server (stdio + HTTP transports)
 ├── store/            # Episodes, changelog, memory, snapshots, approvals
-├── cli/              # 22 CLI command modules
+├── cli/              # 20 CLI command modules
 ├── schema/           # Serde structs for all artifacts
 └── tools/            # 10 built-in tool implementations
 ```
@@ -262,6 +333,6 @@ src/
 
 <p align="center">
   <code>cargo install highharness</code><br>
-  <a href="https://github.com/MAHADEV369/HighHarness">GitHub</a> · <a href="https://crates.io/crates/highharness">crates.io</a> · MIT<br>
-  <a href="./HARNESS_INTEGRATION.md">MCP connection guide</a>
+  <a href="https://github.com/MAHADEV369/HighHarness">GitHub</a> · <a href="https://crates.io/crates/highharness">crates.io</a> · <a href="./CONTRIBUTING.md">Contributing</a> · MIT<br>
+  <a href="./HARNESS_INTEGRATION.md">MCP guide</a> · <a href="./HARNESS_ENGINEERING.md">Engineering spec</a> · <a href="./HARNESS_PRIMITIVES.md">Primitives spec</a>
 </p>
