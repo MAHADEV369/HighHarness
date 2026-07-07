@@ -4,6 +4,30 @@ use crate::error::HxResult;
 use std::fs;
 use std::path::Path;
 
+/// Request parameters for declaring an incident.
+pub struct DeclareRequest<'a> {
+    /// Workspace root path.
+    pub root: &'a Path,
+    /// Detection rule identifier (e.g. "F1").
+    pub detection_rule: &'a str,
+    /// Attack vector identifier (e.g. "V2.3").
+    pub vector: &'a str,
+    /// Run identifier.
+    pub run_id: &'a str,
+    /// Agent identifier.
+    pub agent_id: &'a str,
+    /// Model identifier (optional).
+    pub model_id: Option<&'a str>,
+    /// Model route (optional).
+    pub model_route: Option<&'a str>,
+    /// Severity level: "low", "medium", "high", "critical".
+    pub severity: &'a str,
+    /// Whether the incident had impact.
+    pub had_impact: bool,
+    /// Paths to evidence files.
+    pub evidence_paths: Vec<String>,
+}
+
 /// Declare a new incident. Creates incident JSON and optionally a notification file.
 /// Returns the incident id.
 #[allow(clippy::too_many_arguments)]
@@ -19,10 +43,27 @@ pub fn declare(
     had_impact: bool,
     evidence_paths: Vec<String>,
 ) -> HxResult<String> {
-    let incidents_dir = root.join(".harness").join("artifacts").join("incidents");
+    declare_from(DeclareRequest {
+        root,
+        detection_rule,
+        vector,
+        run_id,
+        agent_id,
+        model_id,
+        model_route,
+        severity,
+        had_impact,
+        evidence_paths,
+    })
+}
+
+/// Declare an incident from a structured request (M9).
+pub fn declare_from(req: DeclareRequest) -> HxResult<String> {
+    let incidents_dir = req.root.join(".harness").join("artifacts").join("incidents");
     fs::create_dir_all(&incidents_dir)?;
 
-    let notifications_dir = root
+    let notifications_dir = req
+        .root
         .join(".harness")
         .join("artifacts")
         .join("notifications");
@@ -31,7 +72,7 @@ pub fn declare(
     let id = format!(
         "inc_{}_{}",
         crate::id::now_compact(),
-        &detection_rule
+        &req.detection_rule
             .to_lowercase()
             .chars()
             .take(6)
@@ -41,30 +82,30 @@ pub fn declare(
     let incident = serde_json::json!({
         "schema_version": 1,
         "id": id,
-        "detection_rule": detection_rule,
-        "vector": vector,
-        "run_id": run_id,
-        "agent_id": agent_id,
-        "model_id": model_id,
-        "model_route": model_route,
-        "severity": severity,
-        "had_impact": had_impact,
+        "detection_rule": req.detection_rule,
+        "vector": req.vector,
+        "run_id": req.run_id,
+        "agent_id": req.agent_id,
+        "model_id": req.model_id,
+        "model_route": req.model_route,
+        "severity": req.severity,
+        "had_impact": req.had_impact,
         "declared_at": crate::id::now_iso(),
         "status": "open",
-        "evidence_paths": evidence_paths,
+        "evidence_paths": req.evidence_paths,
     });
 
     let path = incidents_dir.join(format!("{}.json", id));
     fs::write(&path, serde_json::to_string_pretty(&incident)?)?;
 
     // Write notification file if had_impact
-    if had_impact {
+    if req.had_impact {
         let notif_path = notifications_dir.join(format!("{}.txt", id));
         fs::write(
             &notif_path,
             format!(
                 "INCIDENT WITH IMPACT: {} (rule={}, vector={}, run={})\n",
-                id, detection_rule, vector, run_id
+                id, req.detection_rule, req.vector, req.run_id
             ),
         )?;
     }

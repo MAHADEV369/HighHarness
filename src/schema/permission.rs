@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 
 /// A permission configuration file containing access rules.
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct PermissionFile {
     /// Schema version for forward compatibility.
     pub schema_version: u32,
@@ -13,6 +14,7 @@ pub struct PermissionFile {
 
 /// A single permission rule controlling tool access.
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Rule {
     /// Unique rule identifier.
     pub id: String,

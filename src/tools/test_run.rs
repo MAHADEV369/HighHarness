@@ -7,7 +7,7 @@ use serde_json::{json, Value};
 
 use crate::error::HxResult;
 use crate::schema::tool::{ToolMeta, ToolResult};
-use crate::store::config_path;
+use crate::tools::read_tool_cmd;
 
 /// Execute the configured test command via `shell.exec`.
 pub fn run(args: Value, root: &Path) -> HxResult<ToolResult> {
@@ -15,13 +15,7 @@ pub fn run(args: Value, root: &Path) -> HxResult<ToolResult> {
         .get("phase")
         .and_then(|x| x.as_str())
         .unwrap_or("highharness");
-    let cfg = read_config(root);
-    let cmd = cfg
-        .as_ref()
-        .and_then(|c| c.get("test_cmd"))
-        .and_then(|x| x.as_str())
-        .unwrap_or("true")
-        .to_string();
+    let cmd = read_tool_cmd(root, "test_cmd").unwrap_or_else(|| "true".to_string());
     let _ = phase;
     let result = super::shell_exec::run(json!({"cmd": cmd, "timeout_ms": 60_000}), root)?;
     Ok(ToolResult {
@@ -44,15 +38,6 @@ pub fn run(args: Value, root: &Path) -> HxResult<ToolResult> {
 
         tool_call_id: result.tool_call_id,
     })
-}
-
-fn read_config(root: &Path) -> Option<Value> {
-    let path = config_path(root);
-    let raw = std::fs::read_to_string(&path).ok()?;
-    let v: Value = toml::from_str(&raw).ok()?;
-    v.get("test_run")
-        .cloned()
-        .or_else(|| v.get("test_cmd").map(|c| json!({"test_cmd": c})))
 }
 
 #[allow(dead_code)]

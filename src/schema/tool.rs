@@ -5,6 +5,7 @@ use serde_json::Value;
 
 /// Describes a tool that can be invoked by an agent.
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct ToolDescriptor {
     /// Unique tool identifier.
     pub id: String,
@@ -44,6 +45,7 @@ fn default_approval() -> ApprovalConfig {
 
 /// Capability flags for a tool.
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Capabilities {
     /// Tool can read files.
     pub read: bool,
@@ -63,6 +65,7 @@ pub struct Capabilities {
 
 /// Approval configuration for a tool.
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct ApprovalConfig {
     /// Approval mode: "auto", "always", or "never".
     pub mode: String,

@@ -19,7 +19,6 @@ use crate::error::{HxError, HxResult};
 /// A held file lock; releases on drop.
 pub struct FileLock {
     file: File,
-    #[allow(dead_code)]
     path: PathBuf,
 }
 
@@ -82,7 +81,9 @@ impl FileLock {
 
 impl Drop for FileLock {
     fn drop(&mut self) {
-        let _ = unlock_flock(&self.file);
+        if let Err(e) = unlock_flock(&self.file) {
+            eprintln!("lock: failed to unlock {}: {}", self.path.display(), e);
+        }
     }
 }
 

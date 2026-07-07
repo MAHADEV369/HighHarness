@@ -42,7 +42,11 @@ pub fn append(root: &Path, mut line: SpendLine) -> HxResult<()> {
 /// Summarize spend for a given month (YYYY-MM). Returns a JSON object.
 pub fn summary(root: &Path, month: &str) -> HxResult<Value> {
     let path = spend_dir(root).join(format!("{}.jsonl", month));
-    let raw = fs::read_to_string(&path).unwrap_or_default();
+    let raw = match fs::read_to_string(&path) {
+        Ok(t) => t,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => String::new(),
+        Err(e) => return Err(e.into()),
+    };
     let mut total_usd = 0.0;
     let mut total_in = 0u64;
     let mut total_out = 0u64;
@@ -51,7 +55,13 @@ pub fn summary(root: &Path, month: &str) -> HxResult<Value> {
         if line.trim().is_empty() {
             continue;
         }
-        let v: SpendLine = serde_json::from_str(line)?;
+        let v: SpendLine = match serde_json::from_str(line) {
+            Ok(v) => v,
+            Err(e) => {
+                eprintln!("spend: skipping malformed line: {}", e);
+                continue;
+            }
+        };
         // W5: verify self_hash on non-legacy rows
         if let Some(ref h) = v.self_hash {
             let mut for_hash = v.clone();

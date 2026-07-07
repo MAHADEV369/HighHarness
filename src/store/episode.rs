@@ -7,6 +7,7 @@ use std::path::Path;
 use crate::canonical;
 use crate::error::{HxError, HxResult};
 use crate::schema::episode::{Decision, Failure, Intervention, ToolCall};
+use crate::schema::in_flight::InFlight;
 use crate::store::{episodes_dir, in_flight_path};
 
 /// Open a new episode file. Refuses if `run_id` already exists on disk
@@ -50,26 +51,22 @@ pub fn open(
     f.write_all(content.as_bytes())?;
     f.sync_data()?;
 
-    // Add in-flight line.
-    let ifp = in_flight_path(root);
-    if let Some(parent) = ifp.parent() {
-        fs::create_dir_all(parent)?;
-    }
-    let line = serde_json::json!({
-        "schema_version": 1,
-        "run_id": run_id,
-        "agent_id": agent_id,
-        "opened_at": crate::id::now_iso(),
-        "phase": phase,
-        "tier": tier,
-        "state": "live",
-        "pid": std::process::id(),
-    });
-    let mut f2 = fs::OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(&ifp)?;
-    writeln!(f2, "{}", serde_json::to_string(&line)?)?;
+    // Add in-flight line via the shared in_flight API (H7).
+    let line = InFlight {
+        schema_version: 1,
+
+        run_id: run_id.to_string(),
+        agent_id: agent_id.to_string(),
+
+        opened_at: crate::id::now_iso(),
+        phase: phase.to_string(),
+        tier: tier.to_string(),
+
+        state: "live".to_string(),
+
+        pid: Some(std::process::id()),
+    };
+    crate::store::in_flight::open(root, line)?;
 
     Ok(())
 }
@@ -204,7 +201,14 @@ pub fn close(
             if line.trim().is_empty() {
                 continue;
             }
-            let v: serde_json::Value = serde_json::from_str(line).unwrap_or_default();
+            let v: serde_json::Value = match serde_json::from_str(line) {
+                Ok(v) => v,
+                Err(e) => {
+                    eprintln!("episode: skipping malformed in-flight line: {}", e);
+                    kept.push(line.to_string());
+                    continue;
+                }
+            };
             if v.get("run_id").and_then(|x| x.as_str()) == Some(run_id) {
                 continue;
             }

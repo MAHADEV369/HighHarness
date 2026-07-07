@@ -143,73 +143,20 @@ struct ClEntry {
     status: String,
 }
 
+use crate::store::changelog as changelog_store;
+
 fn read_changelog_entries(root: &Path) -> Vec<ClEntry> {
     let cpath = root.join("CHANGELOG.agent.md");
     let txt = fs::read_to_string(&cpath).unwrap_or_default();
-    let mut entries = Vec::new();
-    let mut in_entry = false;
-    let mut current_lines: Vec<String> = Vec::new();
-    for line in txt.lines() {
-        if line.starts_with("## ENTRY ") {
-            if in_entry && !current_lines.is_empty() {
-                if let Some(e) = parse_entry_block(&current_lines) {
-                    entries.push(e);
-                }
-                current_lines.clear();
-            }
-            in_entry = true;
-            current_lines.push(line.to_string());
-        } else if line.starts_with("## GENESIS") {
-            if in_entry && !current_lines.is_empty() {
-                if let Some(e) = parse_entry_block(&current_lines) {
-                    entries.push(e);
-                }
-                current_lines.clear();
-            }
-            in_entry = false;
-        } else if in_entry {
-            current_lines.push(line.to_string());
-        }
-    }
-    if in_entry && !current_lines.is_empty() {
-        if let Some(e) = parse_entry_block(&current_lines) {
-            entries.push(e);
-        }
-    }
-    entries
-}
-
-fn parse_entry_block(lines: &[String]) -> Option<ClEntry> {
-    if lines.is_empty() {
-        return None;
-    }
-    let header = &lines[0];
-    let after_entry = header.strip_prefix("## ENTRY ")?;
-    let mut parts = after_entry.splitn(2, '\u{2014}');
-    let n_part = parts.next()?.trim();
-    let ts_part = parts.next()?.trim().to_string();
-    let n: u64 = n_part.parse().ok()?;
-
-    let mut verification = String::new();
-    let mut status = String::new();
-    for line in &lines[1..] {
-        if let Some(rest) = line.strip_prefix("- ") {
-            if let Some((name, value)) = rest.split_once(':') {
-                let value = value.trim().to_string();
-                match name.trim() {
-                    "verification" => verification = value,
-                    "status" => status = value,
-                    _ => {}
-                }
-            }
-        }
-    }
-    Some(ClEntry {
-        _n: n,
-        ts: ts_part,
-        verification,
-        status,
-    })
+    changelog_store::parse_all_entries(&txt)
+        .into_iter()
+        .map(|e| ClEntry {
+            _n: e.n,
+            ts: e.ts,
+            verification: e.verification,
+            status: e.status,
+        })
+        .collect()
 }
 
 // --- Episode helpers ---

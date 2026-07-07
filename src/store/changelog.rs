@@ -177,7 +177,7 @@ fn read_block_hash(path: &Path, prev_hash: &str) -> HxResult<String> {
     )))
 }
 
-fn parse_all_entries(txt: &str) -> Vec<Entry> {
+pub(crate) fn parse_all_entries(txt: &str) -> Vec<Entry> {
     let mut out = Vec::new();
     // Split on lines starting with "## ENTRY "
     let mut current: Vec<String> = Vec::new();
