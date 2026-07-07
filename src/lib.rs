@@ -30,6 +30,8 @@ pub mod models;
 pub mod permissions;
 /// Secret redaction vault: regex pattern scanning and token replacement.
 pub mod redaction;
+/// Report generation: HTML episode viewer and future report formats.
+pub mod report;
 /// Retrieval stub: grep-based filesystem search (no RAG, no embeddings).
 pub mod retrieval;
 /// Schema definitions: serde structs for all harness artifacts.

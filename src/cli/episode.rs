@@ -83,6 +83,16 @@ pub enum EpisodeCmd {
         #[clap(long)]
         run_id: String,
     },
+    /// Render an episode as a self-contained HTML report.
+    Render {
+        /// Run identifier.
+        #[clap(long)]
+        run_id: String,
+
+        /// Output file path (default: stdout).
+        #[clap(long)]
+        output: Option<std::path::PathBuf>,
+    },
 }
 
 /// Execute the episode subcommand.
@@ -131,6 +141,11 @@ pub fn run(cmd: Cmd, root: &Path) -> HxResult<i32> {
         EpisodeCmd::Hash { run_id } => {
             let h = crate::store::episode::hash(root, &run_id)?;
             println!("{}", h);
+            Ok(0)
+        }
+        EpisodeCmd::Render { run_id, output } => {
+            let path = crate::store::episodes_dir(root).join(format!("{}.md", run_id));
+            crate::report::render(&path, output.as_deref())?;
             Ok(0)
         }
     }
