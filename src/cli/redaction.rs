@@ -51,7 +51,11 @@ pub fn run(cmd: Cmd, root: &Path) -> HxResult<i32> {
             };
             let redactions = crate::redaction::Redactions::load(root)?;
             let results = redactions.scan(&content);
-            println!("{}", serde_json::to_string_pretty(&results).unwrap());
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&results)
+                    .expect("JSON serialization should not fail on scan results")
+            );
             Ok(0)
         }
         RedactionCmd::List => {

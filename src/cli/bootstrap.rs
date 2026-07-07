@@ -32,12 +32,20 @@ pub fn run(cmd: Cmd, root: &Path) -> HxResult<i32> {
     match cmd.cmd {
         BootstrapCmd::Init { human } => {
             let bs = crate::bootstrap::init(root, &human)?;
-            println!("{}", serde_json::to_string_pretty(&bs).unwrap());
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&bs)
+                    .expect("Bootstrap JSON serialization should not fail")
+            );
             Ok(0)
         }
         BootstrapCmd::Verify => match crate::bootstrap::verify(root) {
             Ok(bs) => {
-                println!("{}", serde_json::to_string_pretty(&bs).unwrap());
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&bs)
+                        .expect("Bootstrap JSON serialization should not fail")
+                );
                 Ok(0)
             }
             Err(e) => {

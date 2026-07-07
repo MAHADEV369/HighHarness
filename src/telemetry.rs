@@ -10,7 +10,6 @@ use sha2::{Digest, Sha256};
 use crate::error::{HxError, HxResult};
 use crate::schema::integrity::IntegrityLine;
 
-
 /// Append-only integrity log with SHA-256 chain verification.
 pub mod integrity {
     use super::*;

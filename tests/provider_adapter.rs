@@ -32,11 +32,7 @@ fn models_complete_returns_events() {
 fn models_complete_accepts_messages_file() {
     use std::io::Write;
     let mut tmp = tempfile::NamedTempFile::new().unwrap();
-    writeln!(
-        tmp,
-        r#"[{{"role":"user","content":"test"}}]"#
-    )
-    .unwrap();
+    writeln!(tmp, r#"[{{"role":"user","content":"test"}}]"#).unwrap();
     let mut cmd = Command::cargo_bin("HighHarness").unwrap();
     cmd.args([
         "models",

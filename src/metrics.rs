@@ -599,10 +599,7 @@ pub fn rollup(root: &Path, window: &Duration) -> HxResult<Rollup> {
 
     // Gather KPI values
     let kpi_fns: Vec<(&str, KpiFn)> = vec![
-        (
-            "merge_rate",
-            kpi_merge_rate as KpiFn,
-        ),
+        ("merge_rate", kpi_merge_rate as KpiFn),
         ("rollback_rate", kpi_rollback_rate),
         ("first_pass_rate", kpi_first_pass_rate),
         ("gate_flip_rate", kpi_gate_flip_rate),

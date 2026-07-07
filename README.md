@@ -5,6 +5,9 @@
   <img src="https://img.shields.io/badge/rust-1.85+-orange" alt="Rust">
 </p>
 
+> spec_version: 1
+> status: stable
+
 > **Platform:** macOS & Linux. Windows is not currently supported.
 
 <h1 align="center">HighHarness</h1>

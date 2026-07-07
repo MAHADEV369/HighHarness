@@ -4,7 +4,8 @@
 //! All randomness comes from a CSPRNG ([`rand::rngs::OsRng`]); there is
 //! no non-cryptographic path.
 
-use rand::{rngs::OsRng, RngCore};
+use rand::rngs::OsRng;
+use rand::TryRngCore;
 
 /// Deterministic `run_id` derived from a fixed seed (the GENESIS bootstrap timestamp).
 ///
@@ -34,7 +35,7 @@ pub fn agent_id_pinned(genesis_ts: &str) -> String {
 /// Format: `agent_<random8hex>_<iso8601-second>`.
 pub fn agent_id() -> String {
     let mut b = [0u8; 4];
-    OsRng.fill_bytes(&mut b);
+    OsRng.try_fill_bytes(&mut b).expect("OsRng failure");
     let rand8: u32 =
         ((b[0] as u32) << 24) | ((b[1] as u32) << 16) | ((b[2] as u32) << 8) | (b[3] as u32);
     let ts = chrono::Utc::now().format("%Y%m%dT%H%M%SZ");
@@ -46,7 +47,7 @@ pub fn agent_id() -> String {
 /// Format: `<iso8601>-<slug>-<agent_short>-<rand4>`.
 pub fn run_id(slug: &str, agent_short: &str) -> String {
     let mut b = [0u8; 2];
-    OsRng.fill_bytes(&mut b);
+    OsRng.try_fill_bytes(&mut b).expect("OsRng failure");
     let rand4 = format!("{:02x}{:02x}", b[0], b[1]);
     let ts = chrono::Utc::now().format("%Y-%m-%dT%H%M%SZ");
     format!("{}-{}-{}-{}", ts, slug, agent_short, rand4)
@@ -89,7 +90,7 @@ pub fn snapshot_id(run_id: &str, label: &str) -> String {
 /// Allocate an incident id.
 pub fn incident_id() -> String {
     let mut b = [0u8; 4];
-    OsRng.fill_bytes(&mut b);
+    OsRng.try_fill_bytes(&mut b).expect("OsRng failure");
     let rand8: u32 =
         ((b[0] as u32) << 24) | ((b[1] as u32) << 16) | ((b[2] as u32) << 8) | (b[3] as u32);
     let ts = chrono::Utc::now().format("%Y%m%dT%H%M%SZ");

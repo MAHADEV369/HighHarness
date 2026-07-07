@@ -1,5 +1,8 @@
 # HighHarness MCP Integration
 
+> spec_version: 1
+> status: stable
+
 HighHarness exposes all its tools via the Model Context Protocol (MCP) over stdio or HTTP.
 Any agent that supports MCP clients can connect to it as a tool provider, gaining
 permission enforcement, episode recording, and hash-chained audit trails.
@@ -138,3 +141,37 @@ View the latest episode:
 ```bash
 ls -t logs/episodes/ | head -1 | xargs -I{} cat logs/episodes/{}
 ```
+
+## Troubleshooting
+
+### MCP connection failures
+
+Symptom: `opencode mcp list` shows `highharness ✗ disconnected`
+
+Causes:
+1. HighHarness not running — start it with `HighHarness mcp serve-http --port 8931 &`
+2. Port conflict — check with `lsof -i :8931`; use a different port with `--port`
+3. Firewall — ensure port 8931 is not blocked by local firewall
+
+### Permission denied errors
+
+If an agent tool call returns "permission denied":
+
+1. Check `.harness/permissions.toml` — rules are evaluated in priority order (highest first)
+2. Verify the tool name matches exactly (e.g., `fs.read`, not `fs_read`)
+3. Check path patterns — use `**` for recursive matching, `*` for single-level
+
+### Hash chain verification failures
+
+If `HighHarness changelog verify-chain` reports broken entries:
+
+1. Run `HighHarness changelog list` to identify affected entries
+2. Check if `CHANGELOG.agent.md` was manually edited — any modification breaks the chain
+3. Restore from backup or git history if available
+
+### Binary not found (PATH issues)
+
+Symptom: `HighHarness: command not found`
+
+- If using `cargo install`: ensure `~/.cargo/bin` is in your PATH
+- If building from source: use `./target/release/HighHarness` or add to PATH

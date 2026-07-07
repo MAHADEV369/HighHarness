@@ -276,9 +276,7 @@ fn intersect(a: &[String], b: &[String]) -> Vec<String> {
     let mut seen = std::collections::HashSet::new();
     for y in b {
         // y is kept if any rule pattern a matches it (i.e., the rule permits y).
-        if seen.insert(y.as_str())
-            && (a.contains(y) || a.iter().any(|x| glob_match(x, y)))
-        {
+        if seen.insert(y.as_str()) && (a.contains(y) || a.iter().any(|x| glob_match(x, y))) {
             out.push(y.clone());
         }
     }

@@ -177,7 +177,7 @@ impl Registry {
         // Apply redaction vault (W3)
         if let Some(ref r) = self.redactions {
             if let serde_json::Value::String(ref mut s) = result.content.value {
-                r.apply(s);
+                r.apply(s).ok();
             }
         }
 

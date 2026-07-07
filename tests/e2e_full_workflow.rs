@@ -14,7 +14,6 @@ fn hx_bin() -> std::path::PathBuf {
 /// End-to-end test: verifies that all major HighHarness features work together.
 /// Runs the actual binary and tests CLI + MCP server + permissions + episodes
 /// + memory + snapshots + clarifications + model adapter.
-
 fn hx() -> Command {
     Command::cargo_bin("HighHarness").unwrap()
 }
@@ -53,7 +52,12 @@ fn e2e_clarification_request_list_resolve() {
 
     // Request a clarification
     let output = hx()
-        .args(["clarification", "request", "--question", "What model to use?"])
+        .args([
+            "clarification",
+            "request",
+            "--question",
+            "What model to use?",
+        ])
         .current_dir(root)
         .output()
         .unwrap();
@@ -78,7 +82,10 @@ fn e2e_clarification_request_list_resolve() {
         .unwrap();
     assert!(output.status.success(), "list failed");
     let list_out = String::from_utf8_lossy(&output.stdout);
-    assert!(list_out.contains("pending"), "expected pending clarification");
+    assert!(
+        list_out.contains("pending"),
+        "expected pending clarification"
+    );
     assert!(
         list_out.contains(&clarification_id),
         "expected our clarification id in list"
@@ -99,10 +106,7 @@ fn e2e_clarification_request_list_resolve() {
         .unwrap();
     assert!(output.status.success(), "resolve failed");
     let resolve_out = String::from_utf8_lossy(&output.stdout);
-    assert!(
-        resolve_out.contains("resolved"),
-        "expected resolved status"
-    );
+    assert!(resolve_out.contains("resolved"), "expected resolved status");
     assert!(resolve_out.contains("GPT-4"), "expected answer in output");
 }
 
@@ -115,7 +119,12 @@ fn e2e_mcp_server_permissions_and_episode() {
     std::fs::create_dir_all(root.join(".harness").join("locks")).unwrap();
     std::fs::create_dir_all(root.join("logs").join("episodes")).unwrap();
     std::fs::create_dir_all(root.join(".harness").join("tools")).unwrap();
-    std::fs::create_dir_all(root.join(".harness").join("artifacts").join("clarifications")).unwrap();
+    std::fs::create_dir_all(
+        root.join(".harness")
+            .join("artifacts")
+            .join("clarifications"),
+    )
+    .unwrap();
 
     std::fs::write(
         root.join(".harness").join("permissions.toml"),
@@ -260,8 +269,8 @@ reason = "exec"
 
     // Verify responses are valid JSON-RPC
     for (i, line) in responses.iter().enumerate() {
-        let v: serde_json::Value =
-            serde_json::from_str(line).unwrap_or_else(|_| panic!("response {} invalid JSON: {}", i, line));
+        let v: serde_json::Value = serde_json::from_str(line)
+            .unwrap_or_else(|_| panic!("response {} invalid JSON: {}", i, line));
         assert!(
             v.get("jsonrpc") == Some(&serde_json::json!("2.0")),
             "response {} missing jsonrpc: {}",

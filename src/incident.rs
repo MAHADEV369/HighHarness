@@ -59,7 +59,11 @@ pub fn declare(
 
 /// Declare an incident from a structured request (M9).
 pub fn declare_from(req: DeclareRequest) -> HxResult<String> {
-    let incidents_dir = req.root.join(".harness").join("artifacts").join("incidents");
+    let incidents_dir = req
+        .root
+        .join(".harness")
+        .join("artifacts")
+        .join("incidents");
     fs::create_dir_all(&incidents_dir)?;
 
     let notifications_dir = req

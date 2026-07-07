@@ -89,7 +89,7 @@ impl Drop for FileLock {
 
 fn try_flock(file: &File) -> HxResult<bool> {
     let fd = file.as_raw_fd();
-    // LOCK_EX | LOCK_NB
+    // SAFETY: fd is a valid raw fd from File::as_raw_fd(), and flock() does not require any specific memory safety invariants beyond a valid fd.
     let result = unsafe { libc::flock(fd, libc::LOCK_EX | libc::LOCK_NB) };
     if result == 0 {
         Ok(true)
@@ -105,6 +105,7 @@ fn try_flock(file: &File) -> HxResult<bool> {
 
 fn unlock_flock(file: &File) -> HxResult<()> {
     let fd = file.as_raw_fd();
+    // SAFETY: same as above - fd is valid, LOCK_UN is safe to call on any fd returned by as_raw_fd().
     let result = unsafe { libc::flock(fd, libc::LOCK_UN) };
     if result == 0 {
         Ok(())
@@ -156,6 +157,7 @@ pub fn pid_alive(pid: u32) -> bool {
     }
     // kill(pid, 0) returns 0 if process exists and we have permission
     // (or 0 == EPERM), -1 with ESRCH if it does not exist.
+    // SAFETY: kill(pid, 0) is signal-safe and only checks existence; pid is a valid u32 from the pidfile.
     let r = unsafe { libc::kill(pid as i32, 0) };
     if r == 0 {
         return true;

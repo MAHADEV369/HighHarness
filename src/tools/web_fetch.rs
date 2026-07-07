@@ -33,7 +33,12 @@ fn validate_url(url: &str) -> HxResult<String> {
         }
         if let Ok(ip) = IpAddr::from_str(host_str) {
             match ip {
-                IpAddr::V4(v4) if v4.is_loopback() || v4.is_private() || v4.is_unspecified() || v4.is_multicast() => {
+                IpAddr::V4(v4)
+                    if v4.is_loopback()
+                        || v4.is_private()
+                        || v4.is_unspecified()
+                        || v4.is_multicast() =>
+                {
                     return Err(HxError::Other(format!(
                         "web.fetch: private/loopback/multicast IPv4 not allowed: {}",
                         host_str

@@ -1,5 +1,8 @@
 # readharness.md
 
+> spec_version: 1
+> status: stable
+
 **What a developer needs to know about harness engineering in this repo.**
 
 This file is a plain-English explainer for humans. It does not tell agents how to work — that is `HARNESS_ENGINEERING.md`. It only explains what kind of harness engineering is happening here and what the artifacts it produces look like.
@@ -126,7 +129,7 @@ One trace file per agent run, named with a run id (timestamp + slug). It is the 
 - Required reading for post-mortems. If a change in `CHANGELOG.agent.md` looks wrong, open its `run_id` in `logs/episodes/` and walk the path the agent took.
 - The trace file also contains the completed **pre-task checklist** (run before any tool call) and **post-task checklist** (run before declaring complete) — see `HARNESS_ENGINEERING.md` Sections 2 and 3.
 - A filled-in template lives at `logs/episodes/_EXAMPLE.md` — but as of Phase 3 it is **superseded as the canonical real-world reference** by the Episode 1 file below. Use `_EXAMPLE.md` as a structural template for new runs; do not cite it as evidence of a real agent run.
-- **Canonical Episode 1: `logs/episodes/2026-06-29T110448Z-add-version-flag-agent-9bd7.md`** — the demo produced by `make entry-1-demo` (per `BUILD_PHASE_3.md`). Its `CHANGELOG.agent.md` Entry 2 (`n=2`, `prev_hash` = the bootstrap-eval Entry 1's `this_hash`) chains to the GENESIS marker. Hashes are in `scripts/entry-1-repro.json`.
+- **Canonical Episode 1: `logs/episodes/2026-06-29T110448Z-add-version-flag-agent-9bd7.md`** — the demo produced by `make entry-1-demo` (see [`Makefile`](./Makefile) target `entry-1-demo`). Its `CHANGELOG.agent.md` Entry 2 (`n=2`, `prev_hash` = the bootstrap-eval Entry 1's `this_hash`) chains to the GENESIS marker. Hashes are in `scripts/entry-1-repro.json`.
 
 **Episode package** (what's inside each trace file — `HARNESS_ENGINEERING.md` Section 5 is the source of truth):
 

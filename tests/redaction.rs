@@ -218,6 +218,6 @@ fn redaction_apply_replaces_with_token() {
         in_memory_map: std::sync::Mutex::new(Vec::new()),
     };
     let mut s = content.to_string();
-    let results = redactions.apply(&mut s);
+    let results = redactions.apply(&mut s).unwrap();
     assert!(!results.is_empty(), "should have redactions");
 }

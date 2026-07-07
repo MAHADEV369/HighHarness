@@ -183,7 +183,10 @@ mod tests {
             "alpha alpha alpha\nalpha alpha alpha\n",
         )
         .unwrap();
-        let opts = RetrieveOpts { token_budget: 4, ..Default::default() };
+        let opts = RetrieveOpts {
+            token_budget: 4,
+            ..Default::default()
+        };
         let r = retrieve(dir.path(), "alpha", opts).unwrap();
         let spent = r.spent.get("tokens").and_then(|x| x.as_u64()).unwrap_or(0);
         assert!(spent <= 4, "spent={} exceeds budget", spent);

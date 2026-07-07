@@ -5,7 +5,6 @@ use crate::mcp::registry::McpServerConfig;
 use std::path::Path;
 use std::process::Stdio;
 
-
 /// Handle to a spawned MCP sandbox process.
 pub struct SandboxHandle {
     /// The child process, if still alive.

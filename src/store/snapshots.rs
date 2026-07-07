@@ -140,7 +140,10 @@ pub fn diff(root: &Path, before: &str, after: &str) -> HxResult<Value> {
         ));
     }
     if !same_dirty {
-        diff_parts.push(format!("dirty: {} → {}", before_snap.git.dirty, after_snap.git.dirty));
+        diff_parts.push(format!(
+            "dirty: {} → {}",
+            before_snap.git.dirty, after_snap.git.dirty
+        ));
     }
     if diff_parts.is_empty() {
         diff_parts.push("no changes".to_string());
@@ -159,7 +162,9 @@ pub fn diff(root: &Path, before: &str, after: &str) -> HxResult<Value> {
 pub fn revert(root: &Path, snapshot_id: &str) -> HxResult<()> {
     let snap = get(root, snapshot_id)?;
     if snap.git.commit.is_empty() || snap.git.commit == "0000000" {
-        return Err(HxError::Other("snapshot has no valid commit to revert to".to_string()));
+        return Err(HxError::Other(
+            "snapshot has no valid commit to revert to".to_string(),
+        ));
     }
     let output = Command::new("git")
         .arg("-C")

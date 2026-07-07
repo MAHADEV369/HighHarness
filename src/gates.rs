@@ -76,13 +76,7 @@ pub fn run(
             .current_dir(root)
             .env("CHANGED", changes.to_string());
         match tokio::time::timeout(timeout_duration, tokio_cmd.output()).await {
-            Ok(result) => result.map(|out| {
-                (
-                    out.status,
-                    out.stdout,
-                    out.stderr,
-                )
-            }),
+            Ok(result) => result.map(|out| (out.status, out.stdout, out.stderr)),
             Err(_elapsed) => {
                 // Timeout expired — kill the process.
                 Err(std::io::Error::new(

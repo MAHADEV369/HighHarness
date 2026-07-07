@@ -16,8 +16,8 @@ pub mod shell_exec;
 pub mod test_run;
 pub mod web_fetch;
 
-use std::path::{Component, Path, PathBuf};
 use serde_json::Value;
+use std::path::{Component, Path, PathBuf};
 
 /// Read a config value from `.harness/config.toml` by key.
 pub fn read_tool_cmd(root: &Path, key: &str) -> Option<String> {
@@ -54,18 +54,14 @@ pub fn resolve_safe_path(root: &Path, path: &str) -> Result<PathBuf, crate::erro
         .map_err(|_| crate::error::HxError::Other("cannot canonicalize workspace root".into()))?;
     let full = root.join(p);
     let full_canon = if full.exists() {
-        full.canonicalize().map_err(|_| {
-            crate::error::HxError::Other(format!("cannot resolve path '{}'", path))
-        })?
+        full.canonicalize()
+            .map_err(|_| crate::error::HxError::Other(format!("cannot resolve path '{}'", path)))?
     } else {
-        let parent = full.parent().ok_or_else(|| {
-            crate::error::HxError::Other(format!("invalid path '{}'", path))
-        })?;
+        let parent = full
+            .parent()
+            .ok_or_else(|| crate::error::HxError::Other(format!("invalid path '{}'", path)))?;
         let parent_canon = parent.canonicalize().map_err(|_| {
-            crate::error::HxError::Other(format!(
-                "cannot resolve parent of '{}'",
-                path
-            ))
+            crate::error::HxError::Other(format!("cannot resolve parent of '{}'", path))
         })?;
         parent_canon.join(
             full.file_name()

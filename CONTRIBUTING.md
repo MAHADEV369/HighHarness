@@ -1,5 +1,8 @@
 # Contributing to HighHarness
 
+> spec_version: 1
+> status: stable
+
 ## Development Setup
 
 ```bash
@@ -105,3 +108,66 @@ cargo test --features deterministic
 - Public items must have doc comments (enforced by `#![deny(missing_docs)]`)
 - Atomic writes: write-to-temp + rename, never in-place mutation
 - All shared-writer paths must acquire the documented lock
+
+## PR Workflow
+
+1. Create a feature branch from `main`
+2. Make your changes, keeping commits atomic and messages descriptive
+3. Run `cargo clippy --all-targets --all-features -- -D warnings` and fix any warnings
+4. Run `cargo fmt --all -- --check` and fix formatting
+5. Run `cargo test --all-features` and ensure all tests pass
+6. Run `cargo doc --no-deps` and verify no missing-docs errors
+7. Open a pull request against `main` with a clear description of the change
+
+## Commit Message Conventions
+
+Use conventional commits format:
+
+```
+<type>: <short description>
+
+<optional body>
+```
+
+Types: `feat` (new feature), `fix` (bug fix), `docs` (documentation), `refactor` (code change without feature/fix), `test` (tests), `chore` (maintenance), `sec` (security).
+
+Examples:
+- `feat: add --dry-run flag to fs.edit`
+- `fix: prevent panic on missing permissions.toml`
+- `docs: add troubleshooting section to HARNESS_INTEGRATION.md`
+
+## Code Review Expectations
+
+- All PRs require at least one approval before merging
+- Reviewers should verify: correctness, test coverage, documentation, security implications
+- All CI checks must pass (clippy, fmt, test, doc)
+- Prefer small, focused PRs over large, sweeping changes
+
+## Issue Tracker
+
+Report bugs and request features at [GitHub Issues](https://github.com/MAHADEV369/HighHarness/issues).
+
+When filing a bug report, include:
+- HighHarness version (`HighHarness --version`)
+- Rust version (`rustc --version`)
+- Steps to reproduce
+- Expected vs actual behavior
+- Relevant log output or error messages
+
+## Release Process
+
+1. Update version in `Cargo.toml` per [SemVer](https://semver.org/)
+2. Update `CHANGELOG.agent.md` with the release entry
+3. Run full test suite: `cargo test --all-features`
+4. Verify determinism: `cargo build --release --features deterministic`
+5. Tag the release: `git tag vX.Y.Z && git push --tags`
+6. Publish: `cargo publish`
+7. Create a GitHub Release with release notes
+
+## Testing Philosophy
+
+- Unit tests live alongside the code in `#[cfg(test)]` modules
+- Integration tests live in `tests/` and test the binary as a subprocess
+- All new features should include tests
+- Prefer deterministic tests (no network or time dependencies when avoidable)
+- Use `TempDir` for filesystem tests, never the real working tree

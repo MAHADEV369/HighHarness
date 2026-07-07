@@ -4,7 +4,7 @@
 /// JWTs, GCP keys) and replaces matches with `<REDACTED:id>` tokens.
 /// The original values are held in-memory only (never persisted) and wiped
 /// on `wipe()` or process exit.
-use crate::error::HxResult;
+use crate::error::{HxError, HxResult};
 use regex::Regex;
 use serde::Serialize;
 use std::fs;
@@ -109,12 +109,15 @@ impl Redactions {
 
     /// Apply redactions to content in-place, replacing matches with tokens.
     /// Returns the list of redactions applied.
-    pub fn apply(&self, content: &mut String) -> Vec<TextRedaction> {
+    pub fn apply(&self, content: &mut String) -> HxResult<Vec<TextRedaction>> {
         let redactions = self.scan(content);
         if redactions.is_empty() {
-            return redactions;
+            return Ok(redactions);
         }
-        let mut map = self.in_memory_map.lock().unwrap();
+        let mut map = self
+            .in_memory_map
+            .lock()
+            .map_err(|e| HxError::Other(format!("lock poisoned: {}", e)))?;
         for r in redactions.iter().rev() {
             let replacement = r.replacement.clone();
             map.push((
@@ -123,26 +126,33 @@ impl Redactions {
             ));
             content.replace_range(r.range[0]..r.range[1], &replacement);
         }
-        redactions
+        Ok(redactions)
     }
 
     /// Look up the original secret value for a replacement token.
     ///
     /// `replacement_token` is the `<REDACTED:id>` string inserted by `apply()`.
     /// Returns the original secret text if found in the in-memory map.
-    pub fn lookup(&self, replacement_token: &str) -> Option<String> {
-        let map = self.in_memory_map.lock().unwrap();
+    pub fn lookup(&self, replacement_token: &str) -> HxResult<Option<String>> {
+        let map = self
+            .in_memory_map
+            .lock()
+            .map_err(|e| HxError::Other(format!("lock poisoned: {}", e)))?;
         for (token, secret) in map.iter() {
             if token == replacement_token {
-                return Some(secret.clone());
+                return Ok(Some(secret.clone()));
             }
         }
-        None
+        Ok(None)
     }
 
     /// Wipe the in-memory redaction map. Called on process exit or explicitly.
-    pub fn wipe(&self) {
-        let mut map = self.in_memory_map.lock().unwrap();
+    pub fn wipe(&self) -> HxResult<()> {
+        let mut map = self
+            .in_memory_map
+            .lock()
+            .map_err(|e| HxError::Other(format!("lock poisoned: {}", e)))?;
         map.clear();
+        Ok(())
     }
 }

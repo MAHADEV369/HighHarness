@@ -89,8 +89,8 @@ pub fn complete(
         )
     })?;
 
-    let base_url = std::env::var("MODEL_BASE_URL")
-        .unwrap_or_else(|_| "https://api.openai.com/v1".to_string());
+    let base_url =
+        std::env::var("MODEL_BASE_URL").unwrap_or_else(|_| "https://api.openai.com/v1".to_string());
 
     let url = format!("{}/chat/completions", base_url.trim_end_matches('/'));
 
@@ -171,9 +171,7 @@ pub fn complete(
                         tool_call: None,
                         usage: None,
                         cost: None,
-                        finish_reason: choice["finish_reason"]
-                            .as_str()
-                            .map(|s| s.to_string()),
+                        finish_reason: choice["finish_reason"].as_str().map(|s| s.to_string()),
                         error: None,
                     });
                 }

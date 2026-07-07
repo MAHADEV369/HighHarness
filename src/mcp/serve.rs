@@ -77,12 +77,7 @@ pub fn serve(root: &Path) -> HxResult<i32> {
             "initialize" => handle_initialize(id_val, &params),
             "ping" => json_rpc_result(id_val, Value::Null),
             "tools/list" => handle_tools_list(id_val, &registry, root),
-            "tools/call" => {
-                let resp = handle_tools_call(
-                    id_val, &params, &registry, root, &mut session,
-                );
-                resp
-            }
+            "tools/call" => handle_tools_call(id_val, &params, &registry, root, &mut session),
             "shutdown" => {
                 if let Some(ref sess) = session {
                     if sess.episode_open {
@@ -110,12 +105,8 @@ pub fn serve(root: &Path) -> HxResult<i32> {
 
     if let Some(ref sess) = session {
         if sess.episode_open {
-            let _ = store::episode::close(
-                root,
-                &sess.run_id,
-                "MCP session closed on EOF",
-                Vec::new(),
-            );
+            let _ =
+                store::episode::close(root, &sess.run_id, "MCP session closed on EOF", Vec::new());
         }
     }
 
@@ -234,14 +225,24 @@ fn handle_tools_call(
 
     if session.is_none() {
         let run_id = format!("mcp-{}", id::now_iso());
-        let _ = store::episode::open(root, &run_id, &agent_id, "MCP governance session", "any", "mcp");
+        let _ = store::episode::open(
+            root,
+            &run_id,
+            &agent_id,
+            "MCP governance session",
+            "any",
+            "mcp",
+        );
         *session = Some(McpSession {
             run_id,
             episode_open: true,
         });
     }
 
-    let sess = session.as_ref().unwrap();
+    let sess = match session.as_ref() {
+        Some(s) => s,
+        None => return json_rpc_error(id, -32603, "Session not initialized".to_string()),
+    };
     let run_id = &sess.run_id;
     let tool_call_id = format!("mcp-call-{}", id::now_iso());
 
@@ -282,7 +283,10 @@ fn handle_tools_call(
                 return json_rpc_error(
                     id,
                     -32000,
-                    format!("Permission denied: {} (rule: {})", decision.reason, decision.rule_id),
+                    format!(
+                        "Permission denied: {} (rule: {})",
+                        decision.reason, decision.rule_id
+                    ),
                 );
             }
         }
@@ -303,7 +307,12 @@ fn handle_tools_call(
                         .value
                         .as_str()
                         .map(|s| s.chars().take(120).collect())
-                        .unwrap_or_else(|| format!("{:?}", result.content.value).chars().take(120).collect()),
+                        .unwrap_or_else(|| {
+                            format!("{:?}", result.content.value)
+                                .chars()
+                                .take(120)
+                                .collect()
+                        }),
                     started_at: id::now_iso(),
                     duration_ms: result.meta.duration_ms,
                     approval_id: None,
@@ -441,7 +450,8 @@ pub fn serve_http(root: &Path, host: String, port: u16) -> HxResult<i32> {
     let listener = std::net::TcpListener::bind(&addr)
         .map_err(|e| crate::error::HxError::Other(format!("bind {addr}: {e}")))?;
 
-    listener.set_nonblocking(true)
+    listener
+        .set_nonblocking(true)
         .map_err(|e| crate::error::HxError::Other(format!("set_nonblocking: {e}")))?;
 
     eprintln!("HighHarness MCP server listening on http://{addr}");
@@ -517,8 +527,12 @@ fn handle_http_connection(root: &Path, mut stream: std::net::TcpStream) -> HxRes
             if !session.episode_open {
                 let agent_id = format!("mcp-http-client-{}", id::now_iso());
                 let _ = store::episode::open(
-                    root, &session.run_id, &agent_id,
-                    "MCP HTTP governance session", "any", "mcp",
+                    root,
+                    &session.run_id,
+                    &agent_id,
+                    "MCP HTTP governance session",
+                    "any",
+                    "mcp",
                 );
                 session.episode_open = true;
             }
@@ -607,7 +621,10 @@ fn handle_http_tools_call(
                 return json_rpc_error(
                     id,
                     -32000,
-                    format!("Permission denied: {} (rule: {})", decision.reason, decision.rule_id),
+                    format!(
+                        "Permission denied: {} (rule: {})",
+                        decision.reason, decision.rule_id
+                    ),
                 );
             }
         }
@@ -620,9 +637,17 @@ fn handle_http_tools_call(
                 tool_call_id: tool_call_id.clone(),
                 tool: name.clone(),
                 args: args.clone(),
-                result_summary: result.content.value.as_str()
+                result_summary: result
+                    .content
+                    .value
+                    .as_str()
                     .map(|s| s.chars().take(120).collect())
-                    .unwrap_or_else(|| format!("{:?}", result.content.value).chars().take(120).collect()),
+                    .unwrap_or_else(|| {
+                        format!("{:?}", result.content.value)
+                            .chars()
+                            .take(120)
+                            .collect()
+                    }),
                 started_at: id::now_iso(),
                 duration_ms: result.meta.duration_ms,
                 approval_id: None,
@@ -676,12 +701,7 @@ fn handle_http_tools_call(
 /// Close an HTTP MCP session episode.
 fn close_http_session(root: &Path, session: &McpSession) {
     if session.episode_open {
-        let _ = store::episode::close(
-            root,
-            &session.run_id,
-            "MCP HTTP session closed",
-            Vec::new(),
-        );
+        let _ = store::episode::close(root, &session.run_id, "MCP HTTP session closed", Vec::new());
     }
 }
 

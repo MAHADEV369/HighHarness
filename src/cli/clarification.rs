@@ -58,7 +58,9 @@ struct Clarification {
 
 /// Return the path to the clarifications artifact directory.
 fn clarifications_dir(root: &Path) -> std::path::PathBuf {
-    root.join(".harness").join("artifacts").join("clarifications")
+    root.join(".harness")
+        .join("artifacts")
+        .join("clarifications")
 }
 
 /// Execute the clarification subcommand with persistent storage.

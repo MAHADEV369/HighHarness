@@ -46,14 +46,15 @@ pub fn run(cmd: Cmd, root: &Path) -> HxResult<i32> {
             messages_file,
             messages,
         } => {
-            let msgs: Vec<crate::models::openai_compat::Message> = if let Some(ref path) = messages_file {
-                let raw = std::fs::read_to_string(path)?;
-                serde_json::from_str(&raw)?
-            } else if let Some(ref inline) = messages {
-                serde_json::from_str(inline)?
-            } else {
-                vec![]
-            };
+            let msgs: Vec<crate::models::openai_compat::Message> =
+                if let Some(ref path) = messages_file {
+                    let raw = std::fs::read_to_string(path)?;
+                    serde_json::from_str(&raw)?
+                } else if let Some(ref inline) = messages {
+                    serde_json::from_str(inline)?
+                } else {
+                    vec![]
+                };
             let redactions = crate::redaction::Redactions::load(root)?;
             let req = crate::models::openai_compat::CompleteRequest {
                 model_id: model,
@@ -69,7 +70,11 @@ pub fn run(cmd: Cmd, root: &Path) -> HxResult<i32> {
             match crate::models::openai_compat::complete(&req, &redactions, root) {
                 Ok(events) => {
                     for e in &events {
-                        println!("{}", serde_json::to_string(e).unwrap());
+                        println!(
+                            "{}",
+                            serde_json::to_string(e)
+                                .expect("JSON serialization should not fail on model events")
+                        );
                     }
                 }
                 Err(e) => {
@@ -82,7 +87,11 @@ pub fn run(cmd: Cmd, root: &Path) -> HxResult<i32> {
                         finish_reason: None,
                         error: Some(e.to_string()),
                     };
-                    println!("{}", serde_json::to_string(&err_event).unwrap());
+                    println!(
+                        "{}",
+                        serde_json::to_string(&err_event)
+                            .expect("JSON serialization should not fail on model events")
+                    );
                 }
             }
             Ok(0)
