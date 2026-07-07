@@ -16,7 +16,8 @@ pub fn run(args: Value, root: &Path) -> HxResult<ToolResult> {
         .get("path")
         .and_then(|x| x.as_str())
         .ok_or_else(|| HxError::Other("fs.hash: missing 'path'".to_string()))?;
-    let full = root.join(path);
+    let full = crate::tools::resolve_safe_path(root, path)
+        .map_err(|e| HxError::Other(format!("fs.hash path error: {}", e)))?;
     let bytes = fs::read(&full)?;
     let mut h = Sha256::new();
     h.update(&bytes);

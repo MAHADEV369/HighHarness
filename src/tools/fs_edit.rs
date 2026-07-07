@@ -22,7 +22,8 @@ pub fn run(args: Value, root: &Path) -> HxResult<ToolResult> {
         .get("path")
         .and_then(|x| x.as_str())
         .ok_or_else(|| HxError::Other("fs.edit: missing 'path'".to_string()))?;
-    let full = root.join(path);
+    let full = crate::tools::resolve_safe_path(root, path)
+        .map_err(|e| HxError::Other(format!("fs.edit path error: {}", e)))?;
     let original = fs::read_to_string(&full).unwrap_or_default();
 
     let new_content = if let Some(old) = args.get("old").and_then(|x| x.as_str()) {

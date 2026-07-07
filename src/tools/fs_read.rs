@@ -20,7 +20,8 @@ pub fn run(args: Value, root: &Path) -> HxResult<ToolResult> {
         .get("max_bytes")
         .and_then(|x| x.as_u64())
         .unwrap_or(DEFAULT_MAX_BYTES);
-    let full = root.join(path);
+    let full = crate::tools::resolve_safe_path(root, path)
+        .map_err(|e| HxError::Other(format!("fs.read path error: {}", e)))?;
     let meta = fs::metadata(&full)?;
     if meta.len() > max {
         return Err(HxError::Other(format!(
