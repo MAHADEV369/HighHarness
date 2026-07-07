@@ -90,7 +90,7 @@ HighHarness changelog get <N>
 
 **Handler:** `src/cli/episode.rs`
 
-Open, append, or close episode traces.
+Open, append, close, or render episode traces as HTML.
 
 | Subcommand | Description |
 |------------|-------------|
@@ -99,6 +99,7 @@ Open, append, or close episode traces.
 | `append-tool-call` | Append a tool call record to an episode |
 | `close` | Close an episode with verification |
 | `hash` | Compute the episode hash |
+| `render` | Render an episode as a self-contained HTML report |
 
 ### `episode open`
 
@@ -158,6 +159,19 @@ HighHarness episode hash --run-id <ID>
 | Flag | Description |
 |------|-------------|
 | `--run-id <ID>` | Run identifier |
+
+### `episode render`
+
+Render a closed episode as a self-contained HTML report with syntax-highlighted JSON, gate pass/fail badges, and SHA-256 hash display.
+
+```
+HighHarness episode render --run-id <ID> [--output <PATH>]
+```
+
+| Flag | Description |
+|------|-------------|
+| `--run-id <ID>` | Run identifier |
+| `--output <PATH>` | Output file path (default: stdout) |
 
 ---
 

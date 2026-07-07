@@ -145,7 +145,7 @@ The hash chain is a **mathematical invariant**, not a policy. It cannot be overr
 - ✗ Does not protect against root access, kernel compromise, or deleted repositories
 
 ### 📋 Auditability
-**Episode traces** — every run produces the full story: plan, tool calls, decisions, failures, verification report. All in `logs/episodes/<run-id>.md` with SHA-256 hash.
+**Episode traces** — every run produces the full story: plan, tool calls, decisions, failures, verification report. All in `logs/episodes/<run-id>.md` with SHA-256 hash. Render any episode as a self-contained HTML report via `HighHarness episode render --run-id <ID>`.
 
 ### 🛡️ Safety
 **Permission engine** — default-deny, priority-sorted rules. Define exactly what each agent can touch. Destructive operations blocked by default.
@@ -197,7 +197,7 @@ Your agent is now governed. Every tool call is checked, recorded, and hash-chain
 |---------|-------------|
 | `bootstrap` | Initialize or verify the harness skeleton and hash chain |
 | `changelog` | Append, get, list, or verify the hash-chained changelog |
-| `episode` | Open, append, or close episode traces |
+| `episode` | Open, append, close, or render episode traces as HTML |
 | `snapshot` | Take, diff, or revert git snapshots |
 | `gates` | Run verification gates (syntactic/functional/semantic/regression) |
 | `tools` | Invoke built-in tools or list tool descriptors |
@@ -320,8 +320,8 @@ src/
 | ✅ | Git snapshots (take/diff/revert) |
 | ✅ | Model inference via OpenAI-compatible API |
 | ✅ | Published on crates.io (`cargo install`) |
-| 🛠️ | Visual episode viewer (HTML report) |
-| 🛠️ | Brew tap distribution |
+| ✅ | Visual episode viewer (HTML report) |
+| ✅ | Brew tap distribution |
 | 🔜 | Multi-agent coordination |
 | 🔜 | Enterprise RBAC + SSO |
 
